@@ -9,8 +9,14 @@ public class Navigation {
     public Navigation(RobotController robot){
         rc = robot;
     }
-    Lib l = new Lib();
     //this is the navigation class that we create an object of for each robot to keep our nav code nice and neat
+
+    public void tryMove(Direction dir) throws GameActionException {
+        if(rc.canMove(dir)){
+            rc.move(dir);
+        }
+    }
+
 
     MapLocation newCoord(MapLocation coords) throws GameActionException {
         List<MapLocation> bfs = getBfs(coords);
@@ -18,8 +24,8 @@ public class Navigation {
     }
 
     List<MapLocation> getBfs(MapLocation coords) throws GameActionException {
-        Map<MapLocation, MapLocation> bfsLookup = new HashMap<MapLocation, MapLocation>();
-        Queue<MapLocation> toLookFor = new LinkedList<MapLocation>();
+        Map<MapLocation, MapLocation> bfsLookup = new HashMap<>();
+        Queue<MapLocation> toLookFor = new LinkedList<>();
         List<MapLocation> correctPath = new ArrayList<>();
         List<MapLocation> searched = new ArrayList<>();
         MapLocation currentPos;
@@ -27,13 +33,14 @@ public class Navigation {
         while(!bfsLookup.containsKey(coords) && toLookFor.size() > 0) {
             currentPos = toLookFor.remove();
             if(!searched.contains(currentPos)) {
-                for(Direction dir : l.directions) {
+                for(Direction dir : Lib.directions) {
                     if(!bfsLookup.containsKey(currentPos.add(dir))) {
                         if(rc.canSenseLocation(currentPos.add((dir)))) {
                             bfsLookup.put(currentPos.add(dir), currentPos);
                             toLookFor.add(currentPos.add(dir));
                         }
-                        else{
+                        else{ //should we really do this? maybe what we could do is fill in the map and then add it here, but again, I think that just making a nav system
+                            //that pretty much just moves to its target while just finding out on the fly how to avoid obstacles would be best (walls are not fun to do)
                             bfsLookup.put(currentPos.add(dir), currentPos);
                             toLookFor.add(currentPos.add(dir));
                         }
@@ -42,6 +49,7 @@ public class Navigation {
                 searched.add(currentPos);
             }
         }
+        //todo, most likely the coords aren't contained here because it's out of reach, so just to the one that's closest to the coords
         if(bfsLookup.containsKey(coords)) {
             currentPos = coords;
             while(currentPos != rc.getLocation()) {
