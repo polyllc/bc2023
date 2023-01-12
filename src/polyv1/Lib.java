@@ -9,6 +9,8 @@ public class Lib {
     int roundNum;
     int lastRoundNum;
 
+    static MapLocation noLoc = new MapLocation(256,256);
+
     public Lib(RobotController robot){
         rc = robot;
         roundNum = rc.getRoundNum();
@@ -58,5 +60,21 @@ public class Lib {
             lastRoundNum = roundNum;
         }
         return currentRoundRobots;
+    }
+
+
+    public int getWeight(){
+        int totalWeight = 0;
+        totalWeight += rc.getResourceAmount(ResourceType.ADAMANTIUM);
+        totalWeight += rc.getResourceAmount(ResourceType.ELIXIR);
+        totalWeight += rc.getResourceAmount(ResourceType.MANA);
+        return totalWeight;
+    }
+
+    public boolean isFullResources(){
+        if(rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR) >= 40){
+            return true;
+        }
+        return false;
     }
 }
