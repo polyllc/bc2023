@@ -10,7 +10,9 @@ public class Carrier {
     int lastRound;
     MapLocation myHQ;
     Jobs job;
-    MapLocation[] resourceLocs;
+    WellInfo[] resourceLocs = new WellInfo[64]; //probably overkill
+    WellInfo mainResource = null;
+    boolean stopMoving = false;
 
     enum Jobs {
         GETTINGSRESOURCES,
@@ -46,20 +48,30 @@ public class Carrier {
             if(targetLoc == Lib.noLoc) {
                 for(WellInfo loc : rc.senseNearbyWells()){
                         targetLoc = loc.getMapLocation();
+                        dirGoing = Direction.CENTER;
+                        if(mainResource == null){
+                            mainResource = loc;
+                        }
+                        if(!lib.contains(resourceLocs, loc)){
+                            //resourceLocs[]
+                        }
                 }
             }
             if(targetLoc != Lib.noLoc){
                 if(lib.isFullResources()){
+                    stopMoving = false;
                     targetLoc = myHQ;
                     for(Direction dir : Lib.directions){
                         if(rc.getLocation().add(dir).equals(targetLoc)){
                             transferToHQ();
-                            System.out.println("sending");
+                            targetLoc = mainResource.getMapLocation();
+                            dirGoing = Direction.CENTER;
                         }
                     }
                 }
                 for(Direction dir : Lib.directions){
                     if(rc.getLocation().add(dir).equals(targetLoc)){
+                        stopMoving = true;
                         if(rc.canCollectResource(rc.getLocation().add(dir),-1)){
                             rc.collectResource(rc.getLocation().add(dir), -1);
                         }
@@ -68,15 +80,21 @@ public class Carrier {
             }
         }
 
+        //statusReport(); we'll do status reports when something notable comes up
 
     }
 
     void move() throws GameActionException {
-        if(targetLoc != Lib.noLoc){
-            nav.tryMove(rc.getLocation().directionTo(targetLoc));
-        }
-        if(dirGoing != Direction.CENTER){
-            nav.tryMove(dirGoing);
+        detectCorner();
+        if(!stopMoving) {
+            if (!targetLoc.equals(Lib.noLoc)) {
+                nav.goTo(targetLoc);
+                System.out.println("target");
+            }
+            if (dirGoing != Direction.CENTER) {
+                nav.goTo(dirGoing);
+                System.out.println("direction");
+            }
         }
     }
 
@@ -92,5 +110,24 @@ public class Carrier {
         }
     }
 
+
+    void statusReport(){
+        System.out.println("targetLoc: " + targetLoc +
+                            "\njob: " + job +
+                            "\ndirGoing: " + dirGoing +
+                            "\nmainResource: " + mainResource +
+                            "\nposition: " + rc.getLocation() +
+                            "\n");
+    }
+
+    void detectCorner(){
+        if(rc.getLocation().equals(new MapLocation(rc.getMapWidth() - 1, rc.getMapHeight() - 1)) ||
+            rc.getLocation().equals(new MapLocation(0, rc.getMapHeight() - 1)) ||
+            rc.getLocation().equals(new MapLocation(rc.getMapWidth() - 1, 0)) ||
+            rc.getLocation().equals(new MapLocation(0,0))){
+            dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
+
+        }
+    }
 
 }

@@ -77,4 +77,13 @@ public class Lib {
         }
         return false;
     }
+
+    public boolean contains(WellInfo[] wells, WellInfo well){
+        for(WellInfo w : wells){
+            if(well.equals(w)){
+                return true;
+            }
+        }
+        return false;
+    }
 }

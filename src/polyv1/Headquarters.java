@@ -18,10 +18,16 @@ public class Headquarters {
             firstRoundSetup();
         }
 
+        //what to make?
+
         for(Direction dir : Lib.directions){
             if(rc.canBuildRobot(RobotType.CARRIER, rc.getLocation().add(dir))){
                 rc.buildRobot(RobotType.CARRIER, rc.getLocation().add(dir));
             }
+        }
+
+        if(rc.getRoundNum() > 800){
+            rc.resign();
         }
 
     }
