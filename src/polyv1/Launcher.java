@@ -54,7 +54,7 @@ public class Launcher {
             for(RobotInfo robot : lib.getRobots()){
                 if(robot.getType() == RobotType.HEADQUARTERS && rc.getTeam() == robot.getTeam()){
                     myHQ = robot.getLocation();
-                    dirGoing = robot.getLocation().directionTo(rc.getLocation()); //opposite of hq dir
+                    dirGoing = lib.educatedGuess(myHQ); //opposite of hq dir
                 }
             }
         }

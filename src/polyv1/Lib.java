@@ -2,12 +2,16 @@ package polyv1;
 
 import battlecode.common.*;
 
+import java.util.Map;
+
 public class Lib {
 
     RobotController rc;
 
     int roundNum;
     int lastRoundNum;
+
+    int[] islandsTaken = new int[10];
 
     static MapLocation noLoc = new MapLocation(256,256);
 
@@ -96,6 +100,15 @@ public class Lib {
         return false;
     }
 
+    public boolean contains(int[] ints, int i){
+        for(int j : ints){
+            if(j == i){
+                return true;
+            }
+        }
+        return false;
+    }
+
     boolean detectCorner(Direction dirGoing) throws GameActionException {
         if(rc.getLocation().equals(new MapLocation(rc.getMapWidth() - 1, rc.getMapHeight() - 1)) ||
                 rc.getLocation().equals(new MapLocation(0, rc.getMapHeight() - 1)) ||
@@ -158,6 +171,70 @@ public class Lib {
             case NORTHWEST: return 7;
         }
         return 0;
+    }
+
+    MapLocation[] islandLocs;
+
+    MapLocation[] getIslandLocs() throws GameActionException {
+        if(islandLocs == null){
+            int[] idx = rc.senseNearbyIslands();
+            int i = 0;
+            if(idx.length > 0){
+                islandLocs = getFreeIslands(idx);
+            }
+        }
+        return islandLocs;
+    }
+
+    MapLocation[] getFreeIslands(int[] indexes) throws GameActionException {
+        MapLocation[] locs = new MapLocation[0];
+        for(int i = 0; i < indexes.length; i++){
+            locs = rc.senseNearbyIslandLocations(indexes[0]);
+            if(rc.canSenseLocation(locs[0])){
+                if(rc.senseTeamOccupyingIsland(indexes[i]) != rc.getTeam()){
+                    System.out.println(indexes[i]);
+                    i = indexes.length+1;
+                }
+            }
+            if(i == indexes.length-1){
+                locs = new MapLocation[0];
+            }
+        }
+        return locs;
+    }
+
+    int getIsland() throws GameActionException {
+        int index = 0;
+        int[] indexes = rc.senseNearbyIslands();
+        for (int j : indexes) {
+            MapLocation[] locs = rc.senseNearbyIslandLocations(indexes[0]);
+            if (rc.canSenseLocation(locs[0])) {
+                if (rc.senseTeamOccupyingIsland(j) != rc.getTeam()) {
+                    return j;
+                }
+                else {
+                    if(!contains(islandsTaken, j)){
+                        addIsland(j);
+                    }
+                }
+            } else if (!contains(islandsTaken, j)) {
+                return j;
+            }
+        }
+        return index;
+    }
+
+    void addIsland(int i){
+        for(int j = 0; j < islandsTaken.length; j++){
+            if(islandsTaken[j] == 0){
+                islandsTaken[j] = i;
+                break;
+            }
+        }
+    }
+
+    Direction educatedGuess(MapLocation hq){
+        return rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
     }
 
 }
