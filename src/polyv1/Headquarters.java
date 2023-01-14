@@ -28,15 +28,16 @@ public class Headquarters {
         //  every 50th round, amplifier
         //  every time the carrier asks, make an anchor
         //  and just follow the every other round thing of the carrier and launcher
-        spawnCarrierAndLauncher();
-        if(rc.getRoundNum() >= 100){
+        if(rc.getRoundNum() >= 200){
             //we'll start doing those other things, but now focus on the launchers and carriers
+            spawnAnchors();
         }
+        spawnCarrierAndLauncher();
 
 
 
 
-        if(rc.getRoundNum() > 800){
+        if(rc.getRoundNum() > 1600){
             rc.resign();
         }
 
@@ -56,7 +57,7 @@ public class Headquarters {
     }
 
     void spawn(RobotType robot) throws GameActionException {
-        for(Direction dir : Lib.directions){
+        for(Direction dir : lib.startDirList(lib.dirToIndex(rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2))))){
             if(rc.canBuildRobot(robot, rc.getLocation().add(dir))){
                 rc.buildRobot(robot, rc.getLocation().add(dir));
             }
@@ -67,5 +68,9 @@ public class Headquarters {
         if(rc.canBuildRobot(robot, rc.getLocation().add(dir))){
             rc.buildRobot(robot, rc.getLocation().add(dir));
         }
+    }
+
+    void spawnAnchors(){
+
     }
 }

@@ -132,4 +132,32 @@ public class Lib {
 
         return false;
     }
+
+
+    Direction[] startDirList(int index){
+        Direction[] dirs = new Direction[8];
+        for(Direction dir : directions){
+            dirs[index] = dir;
+            index++;
+            if(index == 8){
+                index = 0;
+            }
+        }
+        return dirs;
+    }
+
+    int dirToIndex(Direction dir){
+        switch(dir){
+            case NORTH: return 0;
+            case NORTHEAST: return 1;
+            case EAST: return 2;
+            case SOUTHEAST: return 3;
+            case SOUTH: return 4;
+            case SOUTHWEST: return 5;
+            case WEST: return 6;
+            case NORTHWEST: return 7;
+        }
+        return 0;
+    }
+
 }

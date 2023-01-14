@@ -13,6 +13,10 @@ public class Carrier {
     WellInfo[] resourceLocs = new WellInfo[64]; //probably overkill
     WellInfo mainResource = null;
     boolean stopMoving = false;
+    ResourceType primaryResource;
+    int turnsLookingForResource; //after like 80 rounds, just go to the one that you see
+
+    MapLocation islandLoc = Lib.noLoc;
 
     enum Jobs {
         GETTINGSRESOURCES,
@@ -26,6 +30,17 @@ public class Carrier {
         int lastRound = startedRound--;
         lib = new Lib(rc);
         job = Jobs.GETTINGSRESOURCES;
+        if(rc.getRoundNum() < 200){
+            if(rc.getRoundNum() % 4 == 0){
+                primaryResource = ResourceType.ADAMANTIUM;
+            }
+            else {
+                primaryResource = ResourceType.MANA;
+            }
+        }
+        else {
+            turnsLookingForResource = 81;
+        }
     }
 
     Direction dirGoing = Direction.CENTER;
@@ -45,12 +60,15 @@ public class Carrier {
         }
 
         if(job == Jobs.GETTINGSRESOURCES){
+            turnsLookingForResource++;
             if(targetLoc == Lib.noLoc) {
                 for(WellInfo loc : rc.senseNearbyWells()){
-                        targetLoc = loc.getMapLocation();
-                        dirGoing = Direction.CENTER;
                         if(mainResource == null){
-                            mainResource = loc;
+                            if(turnsLookingForResource > 80 || loc.getResourceType().equals(primaryResource)) {
+                                mainResource = loc;
+                                targetLoc = loc.getMapLocation();
+                                dirGoing = Direction.CENTER;
+                            }
                         }
                         if(!lib.contains(resourceLocs, loc)){
                             //resourceLocs[]
@@ -80,6 +98,7 @@ public class Carrier {
             }
         }
 
+        attack(); //attack if there are enemies nearby, and you seem to be losing uh oh
         //statusReport(); we'll do status reports when something notable comes up
 
     }
@@ -119,6 +138,22 @@ public class Carrier {
                             "\nmainResource: " + mainResource +
                             "\nposition: " + rc.getLocation() +
                             "\n");
+    }
+
+
+    void attack() throws GameActionException {
+        for(RobotInfo robot : lib.getRobots()){
+            if(robot.getTeam() != rc.getTeam()){
+                if(rc.getLocation().distanceSquaredTo(myHQ) < 20){
+                    if(lib.getWeight() > 0) {
+                        if (rc.canAttack(robot.getLocation())) {
+                            rc.attack(robot.getLocation());
+                            System.out.println("attacking");
+                        }
+                    }
+                }
+            }
+        }
     }
 
 

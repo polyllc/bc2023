@@ -13,6 +13,7 @@ public class Launcher {
     boolean stopMoving = false;
     MapLocation enemyHQ = Lib.noLoc;
     int turnInDir = 0;
+    int turnsJob = 0;
 
     public Launcher(RobotController robot){
         rc = robot;
@@ -21,6 +22,11 @@ public class Launcher {
         int lastRound = startedRound--;
         lib = new Lib(rc);
         job = Jobs.FINDINGENEMIES;
+        if(rc.getRoundNum() > 300){
+            if(rc.getRoundNum() % 2 == 0){
+                job = Jobs.DEFENDINGBASE;
+            }
+        }
     }
 
     enum Jobs {
@@ -85,6 +91,8 @@ public class Launcher {
 
         if(job == Jobs.DEFENDINGBASE){
             //circle around the base, don't stay near it
+            circleBase();
+
         }
 
         //statusReport(); we'll do status reports when something notable comes up
@@ -170,10 +178,22 @@ public class Launcher {
                     }
                 }
             }
-            if(i == 8){
-                return true;
-            }
+            return i == 8;
         }
         return false;
+    }
+
+    void circleBase(){
+        if(rc.getLocation().distanceSquaredTo(myHQ) < 8){
+            dirGoing = myHQ.directionTo(rc.getLocation());
+        }
+        if(rc.getLocation().distanceSquaredTo(myHQ) > 22){
+            dirGoing = dirGoing.rotateRight();
+        }
+        turnsJob++;
+        if(turnsJob > 50){
+            job = Jobs.FINDINGENEMIES;
+            turnsJob = 0;
+        }
     }
 }
