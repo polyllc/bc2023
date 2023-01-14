@@ -86,4 +86,50 @@ public class Lib {
         }
         return false;
     }
+
+    public boolean contains(RobotInfo[] robots, RobotInfo robot){
+        for(RobotInfo r : robots){
+            if(robot.equals(r)){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean detectCorner(Direction dirGoing) throws GameActionException {
+        if(rc.getLocation().equals(new MapLocation(rc.getMapWidth() - 1, rc.getMapHeight() - 1)) ||
+                rc.getLocation().equals(new MapLocation(0, rc.getMapHeight() - 1)) ||
+                rc.getLocation().equals(new MapLocation(rc.getMapWidth() - 1, 0)) ||
+                rc.getLocation().equals(new MapLocation(0,0))){
+            return true;
+        }
+
+        if(dirGoing != Direction.CENTER) {
+            int[] walls = new int[8];
+            int i = 0;
+            for (Direction dir : directions) {
+                if (rc.canSenseLocation(rc.getLocation().add(dir))) {
+                    if (!rc.sensePassability(rc.getLocation().add(dir))) {
+                        walls[i] = 1;
+                    }
+                }
+                i++;
+            }
+
+            if (walls[0] == 1 && walls[1] == 1 && walls[2] == 1 && dirGoing == Direction.NORTHEAST) { //corner northeast
+                return true;
+            }
+            if (walls[2] == 1 && walls[3] == 1 && walls[4] == 1 && dirGoing == Direction.SOUTHEAST) { //corner southeast
+                return true;
+            }
+            if (walls[4] == 1 && walls[5] == 1 && walls[6] == 1 && dirGoing == Direction.SOUTHWEST) { //corner southwest
+                return true;
+            }
+            if (walls[6] == 1 && walls[7] == 1 && walls[0] == 1 && dirGoing == Direction.NORTHWEST) { //corner northwest
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

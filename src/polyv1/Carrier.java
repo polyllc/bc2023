@@ -85,15 +85,16 @@ public class Carrier {
     }
 
     void move() throws GameActionException {
-        detectCorner();
+        if(lib.detectCorner(dirGoing)){
+            //dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
+            dirGoing = dirGoing.opposite();
+        }
         if(!stopMoving) {
             if (!targetLoc.equals(Lib.noLoc)) {
                 nav.goTo(targetLoc);
-                System.out.println("target");
             }
             if (dirGoing != Direction.CENTER) {
                 nav.goTo(dirGoing);
-                System.out.println("direction");
             }
         }
     }
@@ -120,14 +121,5 @@ public class Carrier {
                             "\n");
     }
 
-    void detectCorner(){
-        if(rc.getLocation().equals(new MapLocation(rc.getMapWidth() - 1, rc.getMapHeight() - 1)) ||
-            rc.getLocation().equals(new MapLocation(0, rc.getMapHeight() - 1)) ||
-            rc.getLocation().equals(new MapLocation(rc.getMapWidth() - 1, 0)) ||
-            rc.getLocation().equals(new MapLocation(0,0))){
-            dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
-
-        }
-    }
 
 }
