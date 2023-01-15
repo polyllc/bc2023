@@ -1,8 +1,6 @@
-package polyv1;
+package poly;
 
 import battlecode.common.*;
-
-import java.util.Arrays;
 
 public class Carrier {
     RobotController rc;
@@ -33,7 +31,7 @@ public class Carrier {
         int lastRound = startedRound--;
         lib = new Lib(rc);
         job = Jobs.GETTINGSRESOURCES;
-        if(rc.getRoundNum() > 350 && rc.getRoundNum() < 500){ //todo, optimize this
+        if(rc.getRoundNum() > 250 && rc.getRoundNum() < 450){ //todo, optimize this
             if(rc.getRoundNum() % 2 == 0){
                 primaryResource = ResourceType.ADAMANTIUM;
             }
@@ -69,7 +67,7 @@ public class Carrier {
             if(targetLoc == Lib.noLoc) {
                 for(WellInfo loc : rc.senseNearbyWells()){
                         if(mainResource == null){
-                            if(turnsLookingForResource > 80 || loc.getResourceType().equals(primaryResource)) {
+                            if(turnsLookingForResource > 50 || loc.getResourceType().equals(primaryResource)) {
                                 mainResource = loc;
                                 targetLoc = loc.getMapLocation();
                                 dirGoing = Direction.CENTER;
@@ -141,7 +139,7 @@ public class Carrier {
                 System.out.println("took anchor");
             }
             if(rc.getAnchor() != null) {
-                if (rc.getLocation().equals(targetLoc) || rc.getLocation().equals(islandLoc)) {
+                if (rc.getLocation().equals(targetLoc) || rc.getLocation().equals(islandLoc)) { //todo, make it so that it just senses that it's on the island, and doesn't need to go to the exact position to place anchor
                     if (rc.canPlaceAnchor()) {
                         System.out.println("placed anchor");
                         rc.placeAnchor();

@@ -1,8 +1,6 @@
-package polyv1;
+package poly;
 
 import battlecode.common.*;
-
-import java.awt.*;
 
 public class Headquarters {
     RobotController rc;
@@ -61,7 +59,7 @@ public class Headquarters {
     }
 
     void spawn(RobotType robot) throws GameActionException {
-        for(Direction dir : lib.startDirList(lib.dirToIndex(rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2))))){
+        for(Direction dir : lib.startDirList(lib.dirToIndex(rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2)).rotateRight()))){ //todo, make sure this points at hq's, and for resources for carriers, near resources if near one
             if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir))){
                 rc.buildRobot(robot, rc.getLocation().add(dir).add(dir));
             }

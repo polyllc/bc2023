@@ -1,4 +1,4 @@
-package polyv1;
+package poly;
 
 import battlecode.common.*;
 
@@ -35,7 +35,8 @@ public class Launcher {
         KILLINGENEMIES, //pretty sure this will be after all of the bases are surrounded so they can do whatever
         DESTROYINGANCHOR,
         DEFENDINGBASE, //all hands on deck!
-        REPORTINGBASE
+        REPORTINGBASE,
+        REPORTSURROUNDED
     }
 
     Direction dirGoing = Direction.CENTER;
@@ -74,14 +75,15 @@ public class Launcher {
                 for(RobotInfo robot : lib.getRobots()){
                     if(robot.getTeam() != rc.getTeam()){
                         if(robot.getType() == RobotType.HEADQUARTERS){
+                            enemyHQ = robot.getLocation();
                             if(rc.getRoundNum() > 150){ //todo, make sure only like a couple do this
-                                enemyHQ = robot.getLocation();
                                 targetLoc = myHQ;
                                 job = Jobs.REPORTINGBASE;
                                 break;
                             }
                             targetLoc = robot.getLocation();
                             job = Jobs.SURROUNDINGBASE;
+
                         }
                     }
                 }
@@ -111,6 +113,16 @@ public class Launcher {
                 lib.writeEnemyHQ(enemyHQ);
                 job = Jobs.SURROUNDINGBASE;
                 targetLoc = enemyHQ;
+            }
+        }
+
+        if(job == Jobs.REPORTSURROUNDED){ //to be honest, i'm not sure if this works
+            if(rc.getLocation().distanceSquaredTo(myHQ) < 9){
+                lib.clearEnemyHQ(enemyHQ);
+                job = Jobs.SURROUNDINGBASE;
+                targetLoc = Lib.noLoc;
+                dirGoing = Lib.directions[(int) Math.floor(Math.random() * 8)];
+                enemyHQ = Lib.noLoc;
             }
         }
 
@@ -168,8 +180,15 @@ public class Launcher {
                 System.out.println(targetLoc);
             }
             if(senseSurrounded()){
-                targetLoc = Lib.noLoc;
-                dirGoing = Lib.directions[(int) Math.floor(Math.random() * 8)];
+                if(rc.getRoundNum() > 300 && rc.getRoundNum() % 2 == 0) {
+                    targetLoc = Lib.noLoc;
+                    dirGoing = Lib.directions[(int) Math.floor(Math.random() * 8)];
+                    enemyHQ = Lib.noLoc;
+                }
+                else {
+                    job = Jobs.REPORTSURROUNDED;
+                    targetLoc = myHQ;
+                }
             }
             if(rc.getLocation().equals(targetLoc)){ //meaning right next to
                 stopMoving = true;
@@ -198,6 +217,7 @@ public class Launcher {
                     }
                 }
             }
+            System.out.println("surrounded");
             return i == 8;
         }
         return false;

@@ -1,8 +1,6 @@
-package polyv1;
+package poly;
 
 import battlecode.common.*;
-
-import java.util.*;
 
 public class Navigation {
     RobotController rc;

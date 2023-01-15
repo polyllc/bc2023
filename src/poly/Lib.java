@@ -1,8 +1,6 @@
-package polyv1;
+package poly;
 
 import battlecode.common.*;
-
-import java.util.Map;
 
 public class Lib {
 
@@ -76,10 +74,7 @@ public class Lib {
     }
 
     public boolean isFullResources(){
-        if(rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR) >= 40){
-            return true;
-        }
-        return false;
+        return rc.getResourceAmount(ResourceType.ADAMANTIUM) + rc.getResourceAmount(ResourceType.MANA) + rc.getResourceAmount(ResourceType.ELIXIR) >= 40;
     }
 
     public boolean contains(WellInfo[] wells, WellInfo well){
@@ -269,6 +264,27 @@ public class Lib {
             else if (getEnemyBase(3) == noLoc) {
                 rc.writeSharedArray(6,enemy.x);
                 rc.writeSharedArray(7,enemy.y);
+            }
+        }
+    }
+
+    void clearEnemyHQ(MapLocation hq) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)) {
+            if(getEnemyBase(0).equals(hq)){
+                rc.writeSharedArray(0,0);
+                rc.writeSharedArray(1,0);
+            }
+            else if(getEnemyBase(1).equals(hq)){
+                rc.writeSharedArray(2,0);
+                rc.writeSharedArray(3,0);
+            }
+            else if(getEnemyBase(2).equals(hq)){
+                rc.writeSharedArray(4,0);
+                rc.writeSharedArray(5,0);
+            }
+            else if(getEnemyBase(3).equals(hq)){
+                rc.writeSharedArray(6,0);
+                rc.writeSharedArray(7,0);
             }
         }
     }
