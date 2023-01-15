@@ -237,4 +237,40 @@ public class Lib {
         return rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
     }
 
+    MapLocation getEnemyBase() throws GameActionException {
+        if(!new MapLocation(rc.readSharedArray(0), rc.readSharedArray(1)).equals(new MapLocation(0,0))){
+            return new MapLocation(rc.readSharedArray(0), rc.readSharedArray(1));
+        }
+        return noLoc;
+    }
+
+    MapLocation getEnemyBase(int index) throws GameActionException {
+        if(!new MapLocation(rc.readSharedArray((index * 2)), rc.readSharedArray(1+(index*2))).equals(new MapLocation(0,0))){
+            return new MapLocation(rc.readSharedArray((index * 2)), rc.readSharedArray(1+(index*2)));
+        }
+        return noLoc;
+    }
+
+
+    void writeEnemyHQ(MapLocation enemy) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)) {
+            if (getEnemyBase(0) == noLoc) {
+                rc.writeSharedArray(0,enemy.x);
+                rc.writeSharedArray(1,enemy.y);
+            }
+            else if (getEnemyBase(1) == noLoc) {
+                rc.writeSharedArray(2,enemy.x);
+                rc.writeSharedArray(3,enemy.y);
+            }
+            else if (getEnemyBase(2) == noLoc) {
+                rc.writeSharedArray(4,enemy.x);
+                rc.writeSharedArray(5,enemy.y);
+            }
+            else if (getEnemyBase(3) == noLoc) {
+                rc.writeSharedArray(6,enemy.x);
+                rc.writeSharedArray(7,enemy.y);
+            }
+        }
+    }
+
 }

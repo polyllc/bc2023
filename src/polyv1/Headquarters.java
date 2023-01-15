@@ -40,7 +40,7 @@ public class Headquarters {
             spawnCarrierAndLauncher();
         }
 
-        if(rc.getRoundNum() > 500){
+        if(rc.getRoundNum() > 250){
             carrierModifier = 4;
         }
 

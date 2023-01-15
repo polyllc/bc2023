@@ -33,7 +33,7 @@ public class Carrier {
         int lastRound = startedRound--;
         lib = new Lib(rc);
         job = Jobs.GETTINGSRESOURCES;
-        if(rc.getRoundNum() > 400 && rc.getRoundNum() < 700){
+        if(rc.getRoundNum() > 350 && rc.getRoundNum() < 500){ //todo, optimize this
             if(rc.getRoundNum() % 2 == 0){
                 primaryResource = ResourceType.ADAMANTIUM;
             }
@@ -107,6 +107,8 @@ public class Carrier {
             }
         }
 
+
+        //todo, bring those free island coords to the hq so they can immediately build an anchor and new carriers can just take over an island
         if(islandLoc == Lib.noLoc){ //somehow I need to make sure that once an island is taken, don't go there anymore (just defend with launchers)
             if(lib.getIslandLocs() != null) {
                 if (lib.getIslandLocs().length > 0) {

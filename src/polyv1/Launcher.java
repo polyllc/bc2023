@@ -34,7 +34,8 @@ public class Launcher {
         SURROUNDINGBASE,
         KILLINGENEMIES, //pretty sure this will be after all of the bases are surrounded so they can do whatever
         DESTROYINGANCHOR,
-        DEFENDINGBASE //all hands on deck!
+        DEFENDINGBASE, //all hands on deck!
+        REPORTINGBASE
     }
 
     Direction dirGoing = Direction.CENTER;
@@ -57,6 +58,11 @@ public class Launcher {
                     dirGoing = lib.educatedGuess(myHQ); //opposite of hq dir
                 }
             }
+            //todo, send an amplifier with them so they can remove the enemy hq from the list that are needed to be surrounded
+            if(lib.getEnemyBase() != Lib.noLoc){
+                targetLoc = lib.getEnemyBase();
+                job = Jobs.SURROUNDINGBASE;
+            }
         }
 
         attack();
@@ -68,6 +74,12 @@ public class Launcher {
                 for(RobotInfo robot : lib.getRobots()){
                     if(robot.getTeam() != rc.getTeam()){
                         if(robot.getType() == RobotType.HEADQUARTERS){
+                            if(rc.getRoundNum() > 150){ //todo, make sure only like a couple do this
+                                enemyHQ = robot.getLocation();
+                                targetLoc = myHQ;
+                                job = Jobs.REPORTINGBASE;
+                                break;
+                            }
                             targetLoc = robot.getLocation();
                             job = Jobs.SURROUNDINGBASE;
                         }
@@ -92,10 +104,17 @@ public class Launcher {
         if(job == Jobs.DEFENDINGBASE){
             //circle around the base, don't stay near it
             circleBase();
-
         }
 
-        //statusReport(); we'll do status reports when something notable comes up
+        if(job == Jobs.REPORTINGBASE){
+            if(rc.getLocation().distanceSquaredTo(myHQ) < 9){
+                lib.writeEnemyHQ(enemyHQ);
+                job = Jobs.SURROUNDINGBASE;
+                targetLoc = enemyHQ;
+            }
+        }
+
+        statusReport();
 
     }
 
@@ -117,7 +136,7 @@ public class Launcher {
 
 
     void statusReport(){
-        System.out.println("targetLoc: " + targetLoc +
+        rc.setIndicatorString("targetLoc: " + targetLoc +
                 "\njob: " + job +
                 "\ndirGoing: " + dirGoing +
                 "\nposition: " + rc.getLocation() +
@@ -125,6 +144,7 @@ public class Launcher {
     }
 
     void attack() throws GameActionException {
+        //todo, attack taken islands
         for(RobotInfo robot : lib.getRobots()){
             if(robot.getTeam() != rc.getTeam()){
                 if(robot.getType() == RobotType.AMPLIFIER){ //priority
