@@ -2,6 +2,8 @@ package poly;
 
 import battlecode.common.*;
 
+import java.util.Map;
+
 public class Lib {
 
     RobotController rc;
@@ -34,7 +36,7 @@ public class Lib {
         int width = rc.getMapWidth();
         int height = rc.getMapHeight();
 
-        if(width/2 >= rc.getLocation().x) { //left section
+        if(width/2 > rc.getLocation().x) { //left section
             if(height/2 <= rc.getLocation().y) { //top section, quadrant 2
                 return 2;
             }
@@ -46,11 +48,50 @@ public class Lib {
             if(height/2 <= rc.getLocation().y) { //top section, quadrant 1
                 return 1;
             }
-            if(height/2 >= rc.getLocation().y) { //bottom section quadrant 4
+            if(height/2 > rc.getLocation().y) { //bottom section quadrant 4
                 return 4;
             }
         }
         return 1;
+    }
+
+    public int getQuadrant(MapLocation m){
+        int width = rc.getMapWidth();
+        int height = rc.getMapHeight();
+
+        if(width/2 > m.x) { //left section
+            if(height/2 <= m.y) { //top section, quadrant 2
+                return 2;
+            }
+            if(height/2 >= m.y) { //bottom section quadrant 3
+                return 3;
+            }
+        }
+        if(width/2 <= m.x) { //right section
+            if(height/2 <= m.y) { //top section, quadrant 1
+                return 1;
+            }
+            if(height/2 > m.y) { //bottom section quadrant 4
+                return 4;
+            }
+        }
+        return 1;
+    }
+
+    public MapLocation getOrigin(int q){
+        if(q == 1){
+            return new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
+        }
+        if(q == 2){
+            return new MapLocation(rc.getMapWidth()/2-1, rc.getMapHeight()/2);
+        }
+        if(q == 3){
+            return new MapLocation(rc.getMapWidth()/2-1, rc.getMapHeight()/2-1);
+        }
+        if(q == 4){
+            return new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2-1);
+        }
+        return new MapLocation(0,0);
     }
 
     RobotInfo[] currentRoundRobots =  new RobotInfo[0];
@@ -142,14 +183,28 @@ public class Lib {
     }
 
 
-    Direction[] startDirList(int index){
+    Direction[] startDirList(int index, int offset){
         Direction[] dirs = new Direction[8];
+        index = (index + offset) % 8;
         for(Direction dir : directions){
             dirs[index] = dir;
             index++;
             if(index == 8){
                 index = 0;
             }
+        }
+        return dirs;
+    }
+
+    Direction[] reverse(Direction[] dirs){ //meant for the hq
+        if(getQuadrant() == 1 || getQuadrant() == 4){
+            Direction[] newDirs = new Direction[dirs.length];
+            int j = dirs.length-1;
+            for(int i = 0; i < dirs.length; i++){
+                newDirs[i] = dirs[j];
+                j--;
+            }
+            return newDirs;
         }
         return dirs;
     }
@@ -247,6 +302,19 @@ public class Lib {
     }
 
 
+    MapLocation getNearestEnemy() throws GameActionException {
+        MapLocation currentLowest = getEnemyBase(0);
+        for(int i = 0; i < 4; i++){
+            if(!getEnemyBase(i).equals(noLoc)){
+                MapLocation c = getEnemyBase(i);
+                if(currentLowest.distanceSquaredTo(rc.getLocation()) > c.distanceSquaredTo(rc.getLocation())){
+                    currentLowest = getEnemyBase(i);
+                }
+            }
+        }
+        return currentLowest;
+    }
+
     void writeEnemyHQ(MapLocation enemy) throws GameActionException {
         if(rc.canWriteSharedArray(0,0)) {
             if (getEnemyBase(0) == noLoc) {
@@ -287,6 +355,80 @@ public class Lib {
                 rc.writeSharedArray(7,0);
             }
         }
+    }
+
+
+    boolean onIsland(int index) throws GameActionException {
+        if(contains(rc.senseNearbyIslands(), index)) {
+            MapLocation[] locs = rc.senseNearbyIslandLocations(index);
+            for (MapLocation loc : locs) {
+                if (rc.getLocation().equals(loc)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    MapLocation getBase() throws GameActionException {
+        if(!new MapLocation(rc.readSharedArray(32), rc.readSharedArray(33)).equals(new MapLocation(0,0))){
+            return new MapLocation(rc.readSharedArray(32), rc.readSharedArray(33));
+        }
+        return noLoc;
+    }
+
+    MapLocation getBase(int index) throws GameActionException {
+        if(!new MapLocation(rc.readSharedArray((index * 2)+32), rc.readSharedArray(33+(index*2))).equals(new MapLocation(0,0))){
+            return new MapLocation(rc.readSharedArray((index * 2)+32), rc.readSharedArray(33+(index*2)));
+        }
+        return noLoc;
+    }
+
+
+    void writeHQ(MapLocation hq) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)) {
+            if (getBase(0) == noLoc) {
+                rc.writeSharedArray(32,hq.x);
+                rc.writeSharedArray(33,hq.y);
+            }
+            else if (getBase(1) == noLoc) {
+                rc.writeSharedArray(34,hq.x);
+                rc.writeSharedArray(35,hq.y);
+            }
+            else if (getBase(2) == noLoc) {
+                rc.writeSharedArray(36,hq.x);
+                rc.writeSharedArray(37,hq.y);
+            }
+            else if (getBase(3) == noLoc) {
+                rc.writeSharedArray(38,hq.x);
+                rc.writeSharedArray(39,hq.y);
+            }
+        }
+    }
+
+    MapLocation getNearestHQ() throws GameActionException {
+        MapLocation currentLowest = getBase(0);
+        for(int i = 0; i < 4; i++){
+            if(!getBase(i).equals(noLoc)){
+                MapLocation c = getBase(i);
+                if(currentLowest.distanceSquaredTo(rc.getLocation()) > c.distanceSquaredTo(rc.getLocation())){
+                    currentLowest = getBase(i);
+                }
+            }
+        }
+        return currentLowest;
+    }
+
+    int numHq() throws GameActionException {
+        return (getBase(0) != noLoc ? 1 : 0) + (getBase(1) != noLoc ? 1 : 0) + (getBase(2) != noLoc ? 1 : 0) + (getBase(3) != noLoc ? 1 : 0);
+    }
+
+    MapLocation[] getHqs() throws GameActionException {
+        MapLocation[] locs = new MapLocation[numHq()];
+        for(int i = 0; i < locs.length; i++){
+            locs[i] = getBase(i);
+        }
+        return locs;
     }
 
 }

@@ -31,7 +31,7 @@ public class Carrier {
         int lastRound = startedRound--;
         lib = new Lib(rc);
         job = Jobs.GETTINGSRESOURCES;
-        if(rc.getRoundNum() > 250 && rc.getRoundNum() < 450){ //todo, optimize this
+        if(rc.getRoundNum() > 120 && rc.getRoundNum() < 400){ //todo, optimize this
             if(rc.getRoundNum() % 2 == 0){
                 primaryResource = ResourceType.ADAMANTIUM;
             }
@@ -60,22 +60,26 @@ public class Carrier {
             }
         }
 
-        antiLock();
+
 
         if(job == Jobs.GETTINGSRESOURCES){
             turnsLookingForResource++;
             if(targetLoc == Lib.noLoc) {
                 for(WellInfo loc : rc.senseNearbyWells()){
-                        if(mainResource == null){
-                            if(turnsLookingForResource > 50 || loc.getResourceType().equals(primaryResource)) {
-                                mainResource = loc;
-                                targetLoc = loc.getMapLocation();
-                                dirGoing = Direction.CENTER;
-                            }
-                        }
-                        if(!lib.contains(resourceLocs, loc)){
-                            //resourceLocs[]
-                        }
+                     if(mainResource == null){
+                         if(turnsLookingForResource > 50 || loc.getResourceType().equals(primaryResource)) {
+                             mainResource = loc;
+                             targetLoc = loc.getMapLocation();
+                             dirGoing = Direction.CENTER;
+                             primaryResource = null;
+                         }
+                     }
+                     else{
+                         targetLoc = mainResource.getMapLocation();
+                     }
+                     if(!lib.contains(resourceLocs, loc)){
+                         //resourceLocs[]
+                     }
                 }
             }
             if(targetLoc != Lib.noLoc){
@@ -86,6 +90,7 @@ public class Carrier {
                 if(lib.isFullResources()){
                     stopMoving = false;
                     targetLoc = myHQ;
+                    //todo, it technically doesn't need to be your hq, just the nearest hq, probably gonna be in the shared array
                     for(Direction dir : Lib.directions){
                         if(rc.getLocation().add(dir).equals(targetLoc)){
                             transferToHQ();
@@ -126,80 +131,89 @@ public class Carrier {
                     if (rc.senseTeamOccupyingIsland(rc.senseIsland(targetLoc)) == rc.getTeam()) {
                         islandLoc = Lib.noLoc;
                         targetLoc = Lib.noLoc; //this may loop back to the island that is still occupied
+                        job = Jobs.GETTINGSRESOURCES;
                         dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2));
                         System.out.println("occupied already");
                     }
                 }
             }
-
-            if(rc.canTakeAnchor(myHQ, Anchor.STANDARD)){
-                rc.takeAnchor(myHQ, Anchor.STANDARD);
-                targetLoc = islandLoc;
-                job = Jobs.PLACINGARCHON;
-                System.out.println("took anchor");
-            }
-            if(rc.getAnchor() != null) {
-                if (rc.getLocation().equals(targetLoc) || rc.getLocation().equals(islandLoc)) { //todo, make it so that it just senses that it's on the island, and doesn't need to go to the exact position to place anchor
-                    if (rc.canPlaceAnchor()) {
-                        System.out.println("placed anchor");
-                        rc.placeAnchor();
-                        job = Jobs.GETTINGSRESOURCES;
-                        targetLoc = Lib.noLoc;
-                        dirGoing = Lib.directions[(int) Math.floor(Math.random() * 8)];
+            //todo, ok so sometimes they have an anchor, but they're too stupid to realise that so they try and collect shit but they can't so they're now just stuck there, fix that
+            if(islandLoc != Lib.noLoc) {
+                if (rc.canTakeAnchor(myHQ, Anchor.STANDARD)) {
+                    rc.takeAnchor(myHQ, Anchor.STANDARD);
+                    targetLoc = islandLoc;
+                    job = Jobs.PLACINGARCHON;
+                    System.out.println("took anchor");
+                }
+                if (rc.getAnchor() != null) {
+                    if (rc.getLocation().equals(targetLoc) || rc.getLocation().equals(islandLoc) || lib.onIsland(islandIndex)) {
+                        if (rc.canPlaceAnchor()) {
+                            System.out.println("placed anchor");
+                            rc.placeAnchor();
+                            job = Jobs.GETTINGSRESOURCES;
+                            targetLoc = Lib.noLoc;
+                            dirGoing = Lib.directions[(int) Math.floor(Math.random() * 8)];
+                            islandIndex = 0;
+                        }
                     }
                 }
             }
         }
 
+        if(rc.getAnchor() != null){ //if you have an anchor, just explore
+            job = Jobs.PLACINGARCHON;
+        }
+
         attack(); //attack if there are enemies nearby, and you seem to be losing uh oh
         statusReport(); //we'll do status reports when something notable comes up
+        antiLock();
 
     }
 
     void move() throws GameActionException {
         if(lib.detectCorner(dirGoing)){
-            //dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
+            //dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2))
             dirGoing = dirGoing.opposite();
         }
         if(!stopMoving) {
             if (!targetLoc.equals(Lib.noLoc)) {
                 nav.goTo(targetLoc);
             }
-            if (dirGoing != Direction.CENTER) {
+            else if (dirGoing != Direction.CENTER) {
                 nav.goTo(dirGoing);
             }
         }
     }
 
     void transferToHQ() throws GameActionException {
-        if(rc.canTransferResource(myHQ, ResourceType.ELIXIR, rc.getResourceAmount(ResourceType.ELIXIR))){
-            rc.transferResource(myHQ, ResourceType.ELIXIR, rc.getResourceAmount(ResourceType.ELIXIR));
+        if(rc.canTransferResource(targetLoc, ResourceType.ELIXIR, rc.getResourceAmount(ResourceType.ELIXIR))){
+            rc.transferResource(targetLoc, ResourceType.ELIXIR, rc.getResourceAmount(ResourceType.ELIXIR));
         }
-        if(rc.canTransferResource(myHQ, ResourceType.MANA, rc.getResourceAmount(ResourceType.MANA))){
-            rc.transferResource(myHQ, ResourceType.MANA, rc.getResourceAmount(ResourceType.MANA));
+        if(rc.canTransferResource(targetLoc, ResourceType.MANA, rc.getResourceAmount(ResourceType.MANA))){
+            rc.transferResource(targetLoc, ResourceType.MANA, rc.getResourceAmount(ResourceType.MANA));
         }
-        if(rc.canTransferResource(myHQ, ResourceType.ADAMANTIUM, rc.getResourceAmount(ResourceType.ADAMANTIUM))){
-            rc.transferResource(myHQ, ResourceType.ADAMANTIUM, rc.getResourceAmount(ResourceType.ADAMANTIUM));
+        if(rc.canTransferResource(targetLoc, ResourceType.ADAMANTIUM, rc.getResourceAmount(ResourceType.ADAMANTIUM))){
+            rc.transferResource(targetLoc, ResourceType.ADAMANTIUM, rc.getResourceAmount(ResourceType.ADAMANTIUM));
         }
     }
 
 
     void statusReport(){
-        rc.setIndicatorString("targetLoc: " + targetLoc +
-                            "\nislandLoc: " + islandLoc +
-                            "\ndir: " + dirGoing +
-                            "\njob: " + job);
+        rc.setIndicatorString("t: " + targetLoc +
+                            "\ni: " + stopMoving +
+                            "\nd: " + dirGoing +
+                            "\nj: " + job +
+                            "\np: " + primaryResource);
     }
 
 
     void attack() throws GameActionException {
         for(RobotInfo robot : lib.getRobots()){
             if(robot.getTeam() != rc.getTeam()){
-                if(rc.getLocation().distanceSquaredTo(myHQ) < 20){
+                if(rc.getLocation().distanceSquaredTo(myHQ) < 30){
                     if(lib.getWeight() > 0) {
                         if (rc.canAttack(robot.getLocation())) {
                             rc.attack(robot.getLocation());
-                            System.out.println("attacking");
                         }
                     }
                 }

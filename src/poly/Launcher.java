@@ -22,6 +22,11 @@ public class Launcher {
         int lastRound = startedRound--;
         lib = new Lib(rc);
         job = Jobs.FINDINGENEMIES;
+        for(RobotInfo r : lib.getRobots()){
+            if(r.getTeam() != rc.getTeam()){
+                job = Jobs.DEFENDINGBASE;
+            }
+        }
         if(rc.getRoundNum() > 300){
             if(rc.getRoundNum() % 2 == 0){
                 job = Jobs.DEFENDINGBASE;
@@ -76,7 +81,7 @@ public class Launcher {
                     if(robot.getTeam() != rc.getTeam()){
                         if(robot.getType() == RobotType.HEADQUARTERS){
                             enemyHQ = robot.getLocation();
-                            if(rc.getRoundNum() > 150){ //todo, make sure only like a couple do this
+                            if(rc.getRoundNum() > 223){ //todo, make sure only like a couple do this
                                 targetLoc = myHQ;
                                 job = Jobs.REPORTINGBASE;
                                 break;
@@ -96,6 +101,18 @@ public class Launcher {
 
         if(job == Jobs.SURROUNDINGBASE){
             if(targetLoc != Lib.noLoc){
+                if(rc.canSenseLocation(targetLoc)){
+                    if(rc.canSenseRobotAtLocation(targetLoc)){
+                        if(rc.senseRobotAtLocation(targetLoc) == null){
+                            lib.clearEnemyHQ(targetLoc);
+                            job = Jobs.FINDINGENEMIES;
+                        }
+                        else if(rc.senseRobotAtLocation(targetLoc).getType() != RobotType.HEADQUARTERS){ //so no exception occurs
+                            lib.clearEnemyHQ(targetLoc);
+                            job = Jobs.FINDINGENEMIES;
+                        }
+                    }
+                }
                 surroundEnemyBase();
             }
             else {
@@ -133,7 +150,7 @@ public class Launcher {
     void move() throws GameActionException {
         if(lib.detectCorner(dirGoing)){
             //dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
-            dirGoing = dirGoing.opposite();
+            dirGoing = dirGoing.rotateRight();
         }
         if(!stopMoving) {
             if (!targetLoc.equals(Lib.noLoc)) {
@@ -217,7 +234,6 @@ public class Launcher {
                     }
                 }
             }
-            System.out.println("surrounded");
             return i == 8;
         }
         return false;
