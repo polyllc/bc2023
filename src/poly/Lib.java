@@ -301,6 +301,23 @@ public class Lib {
         return noLoc;
     }
 
+    boolean getEnemyBase(MapLocation m) throws GameActionException {
+        if(m.equals(getEnemyBase(0))){
+            return true;
+        }
+        else if(m.equals(getEnemyBase(1))){
+            return true;
+        }
+        else if(m.equals(getEnemyBase(2))){
+            return true;
+        }
+        else if(m.equals(getEnemyBase(3))){
+            return true;
+        }
+        return false;
+
+    }
+
 
     MapLocation getNearestEnemy() throws GameActionException {
         MapLocation currentLowest = getEnemyBase(0);

@@ -33,7 +33,7 @@ public class Launcher {
             }
         }
     }
-
+    //todo, maybe once after like round something, group up all of the launchers and attack at once???
     enum Jobs {
         FINDINGENEMIES,
         SURROUNDINGBASE,
@@ -77,6 +77,11 @@ public class Launcher {
                 //find enemy bases, we'll surround them
                 //whatever is first, anchor or base
                 //if anchor, we destroy
+                if(lib.getEnemyBase() != Lib.noLoc){
+                    enemyHQ = lib.getEnemyBase();
+                    targetLoc = enemyHQ;
+                    job = Jobs.SURROUNDINGBASE;
+                }
                 for(RobotInfo robot : lib.getRobots()){
                     if(robot.getTeam() != rc.getTeam()){
                         if(robot.getType() == RobotType.HEADQUARTERS){
@@ -126,6 +131,10 @@ public class Launcher {
         }
 
         if(job == Jobs.REPORTINGBASE){
+            if(lib.getEnemyBase(enemyHQ)){
+                targetLoc = enemyHQ;
+                job = Jobs.SURROUNDINGBASE;
+            }
             if(rc.getLocation().distanceSquaredTo(myHQ) < 9){
                 lib.writeEnemyHQ(enemyHQ);
                 job = Jobs.SURROUNDINGBASE;
