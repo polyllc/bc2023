@@ -99,7 +99,7 @@ public class Lib {
     public RobotInfo[] getRobots(){
         roundNum = rc.getRoundNum();
         if(currentRoundRobots.length == 0 || lastRoundNum < roundNum){
-            currentRoundRobots = rc.senseNearbyRobots();
+            currentRoundRobots = sort(rc.senseNearbyRobots());
             lastRoundNum = roundNum;
         }
         return currentRoundRobots;
@@ -237,12 +237,12 @@ public class Lib {
     }
 
     MapLocation[] getFreeIslands(int[] indexes) throws GameActionException {
-        MapLocation[] locs = new MapLocation[0];
+        MapLocation[] locs = new MapLocation[1];
+        locs[0] = noLoc;
         for(int i = 0; i < indexes.length; i++){
             locs = rc.senseNearbyIslandLocations(indexes[0]);
             if(rc.canSenseLocation(locs[0])){
                 if(rc.senseTeamOccupyingIsland(indexes[i]) != rc.getTeam()){
-                    System.out.println(indexes[i]);
                     i = indexes.length+1;
                 }
             }
@@ -447,5 +447,41 @@ public class Lib {
         }
         return locs;
     }
+
+    void setMana(MapLocation loc) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)){
+            rc.writeSharedArray(40,  loc.x);
+            rc.writeSharedArray(41,  loc.y);
+        }
+    }
+
+    MapLocation getMana() throws GameActionException {
+        return new MapLocation(rc.readSharedArray(40), rc.readSharedArray(41));
+    }
+
+    void updateHQNum() throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)) {
+            rc.writeSharedArray(63, rc.readSharedArray(63) + 1);
+        }
+    }
+
+    int getHQNum() throws GameActionException {
+        return rc.readSharedArray(63);
+    }
+
+    public static RobotInfo[] sort(RobotInfo[] array) {
+        int n = array.length;
+        for (int i = 0; i < n-1; i++) {
+            for (int j = 0; j < n-i-1; j++) {
+                if (array[j].getHealth() < array[j+1].getHealth()) {
+                    RobotInfo temp = array[j];
+                    array[j] = array[j+1];
+                    array[j+1] = temp;
+                }
+            }
+        }
+        return array;
+    }
+
 
 }

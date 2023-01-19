@@ -2,30 +2,55 @@ package poly;
 
 import battlecode.common.*;
 
+import java.awt.*;
+import java.util.Arrays;
+
 public class Headquarters {
     RobotController rc;
     Lib lib;
     int roundsWithoutAnchor = 0;
     int carrierModifier = 3;
     int numCarriers = 0;
+    int hqNum = 0;
+    int numLaunchers = 0;
+    MapLocation[] enemies = new MapLocation[4];
 
     public Headquarters(RobotController robot) throws GameActionException {
         rc = robot;
         lib = new Lib(rc);
         lib.writeHQ(rc.getLocation());
-        System.out.println(lib.getBase());
+        lib.updateHQNum();
+        hqNum = lib.getHQNum();
+        enemies[0] = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
     }
 
     int quadrant;
 
     public void takeTurn() throws GameActionException {
+
+        if(rc.getRoundNum() == 50){
+            lib.clearEnemyHQ(lib.getEnemyBase());
+            lib.clearEnemyHQ(lib.getEnemyBase());
+            lib.clearEnemyHQ(lib.getEnemyBase());
+            lib.clearEnemyHQ(lib.getEnemyBase());
+        }
+
         if(rc.getRoundNum() == 1){
             firstRoundSetup();
         }
         if(rc.getRoundNum() == 2){
+            lib.writeHQ(rc.getLocation());
+        }
+        if(rc.getRoundNum() == 3){
+            lib.writeHQ(rc.getLocation());
+        }
+        if(rc.getRoundNum() == 4){
+            lib.writeHQ(rc.getLocation());
+        }
+        if(rc.getRoundNum() == 1){
             //you can figure out the enemy bases due to the position of your bases
             MapLocation[] hqs = lib.getHqs();
-            MapLocation[] enemyHq = new MapLocation[hqs.length];
+            MapLocation[] enemyHq = new MapLocation[lib.getHQNum()];
             int i = 0;
             for(MapLocation m : hqs){
                 int q = lib.getQuadrant(m);
@@ -55,31 +80,51 @@ public class Headquarters {
                     case 4: realX = otherOrigin.x + Math.abs(xOffset); realY = otherOrigin.y - Math.abs(yOffset); break;
                 }
                 enemyHq[i] = new MapLocation(realX, realY);
-              //  lib.writeEnemyHQ(enemyHq[i]);
+                enemies[i] = new MapLocation(realX, realY);
+                lib.writeEnemyHQ(enemyHq[i]);
             }
         }
 
-        //what to make?
-        //first 100 rounds
-        //  carrier every other round
-        //  launcher every other round
-        //then after
-        //  every 50th round, amplifier
-        //  every time the carrier asks, make an anchor
-        //  and just follow the every other round thing of the carrier and launcher
+        if(rc.getRoundNum() < 20){
+            for(WellInfo w : rc.senseNearbyWells()) {
+                if (rc.getRoundNum() % carrierModifier == 0) {
+                    if (w.getResourceType() == ResourceType.MANA) {
+                        if (numCarriers < 4) { //make these corners based on where the base is, where the first corner is nearest to the center
+                            if (spawn(RobotType.CARRIER, rc.getLocation().directionTo(w.getMapLocation()))) {
+                                numCarriers++;
+                            }
+                        }
+                    }
+                    if(w.getResourceType() == ResourceType.ADAMANTIUM){
+                        if (numCarriers >= 4) { //make these corners based on where the base is, where the first corner is nearest to the center
+                            if (spawn(RobotType.CARRIER, rc.getLocation().directionTo(w.getMapLocation()))) {
+                                numCarriers++;
+                            }
+                        }
+                    }
+                }
+            }
 
-        if(roundsWithoutAnchor < 100 || rc.getRoundNum() < 500) {
+
+
+        }
+
+        if(roundsWithoutAnchor < 100 && rc.getNumAnchors(Anchor.STANDARD) < 1 || rc.getRoundNum() < 500) {
             spawnCarrierAndLauncher();
         }
 
+
+        rc.setIndicatorString(lib.getEnemyBase(0) + " " + lib.getEnemyBase(1) + " " + lib.getEnemyBase(2) + " " + lib.getEnemyBase(3));
+
         if(rc.getRoundNum() >= 200){
+
             //we'll start doing those other things, but now focus on the launchers and carriers
-            if(rc.getRoundNum() % 1 == 0) {
+            if(rc.getRoundNum() % 1 == 0 && rc.getNumAnchors(Anchor.STANDARD) < 1) {
                 spawnAnchors();
             }
         }
 
-        if(rc.getRoundNum() > 250){
+        if(rc.getRoundNum() > 250 || rc.getRoundNum() < 15){
             carrierModifier = 2;
         }
         else {
@@ -92,10 +137,11 @@ public class Headquarters {
                 carrierModifier = 7;
             }
         }
-
-    //todo, !IMPORTANT the first 4 carriers should spawn on the 4 corners
-
     }
+
+    //todo, anchors are not important! if there are no troops near the hq, dont make them!
+    //todo, for some reason, the hq will not produce any carriers even though they have the resources.
+    //todo, once the initial rush is sent out, don't just send all of the troops in the same direction! put them in all directions
 
     void firstRoundSetup(){
         quadrant = lib.getQuadrant();
@@ -103,21 +149,51 @@ public class Headquarters {
 
     void spawnCarrierAndLauncher() throws GameActionException {
         if(rc.getRoundNum() % carrierModifier == 0){
-            if(numCarriers < 4 && rc.getRoundNum() < 50){ //make these corners based on where the base is, where the first corner is nearest to the center
-                if(spawn(RobotType.CARRIER, Lib.directions[numCarriers*2+1])){
+            if(numCarriers < 6 && rc.getRoundNum() < 50){ //make these corners based on where the base is, where the first corner is nearest to the center
+                if(spawn(RobotType.CARRIER, Lib.directions[(numCarriers*2+1) % 8])){ //skip the corner closest to the hq
                     numCarriers++;
                 }
             }
-            spawn(RobotType.CARRIER,0);
+            spawn(RobotType.CARRIER,rc.getRoundNum() >= 50 ? rc.getRoundNum() % 8 : 0);
         }
         else {
-            System.out.println("want to spawn launcher");
-            spawn(RobotType.LAUNCHER,0);
+            if(rc.getRoundNum() < 100) {
+
+                if(numLaunchers < 3){
+                    switch (numLaunchers){
+                        case 0:
+                            if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2)))){ //rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))
+                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                            } break;
+
+                        case 1:
+                            if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)).rotateRight())){
+                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)).rotateRight());
+                            } break;
+
+                        case 2:
+                            if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)).rotateLeft())){
+                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)).rotateLeft());
+                            } break;
+
+
+                    }
+                    numLaunchers++;
+                }
+
+
+                //System.out.println("trying to build: " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)) + " " + lib.getEnemyBase() + " " + lib.getEnemyBase(hqNum-1));
+                if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))){
+                    //System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                }
+            }
+            if(spawn(RobotType.LAUNCHER,rc.getRoundNum() % 8)){
+            }
         }
     }
 
     boolean spawn(RobotType robot, int offset) throws GameActionException {
-        for(Direction dir : lib.reverse(lib.startDirList(lib.dirToIndex(rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2))), offset))){ //todo, make sure this points at hq's, and for resources for carriers, near resources if near one
+        for(Direction dir : lib.reverse(lib.startDirList(lib.dirToIndex(rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2))), offset))){
             if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir))){
                 rc.buildRobot(robot, rc.getLocation().add(dir).add(dir));
                 return true;
@@ -130,13 +206,47 @@ public class Headquarters {
                 rc.buildRobot(robot, rc.getLocation().add(dir));
                 return true;
             }
+
         }
         return false;
     }
 
     boolean spawn(RobotType robot, Direction dir) throws GameActionException {
+        if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir))){
+            rc.buildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir));
+            return true;
+        }
+        if(rc.canBuildRobot(robot, rc.getLocation().add(dir))){
+            rc.buildRobot(robot, rc.getLocation().add(dir));
+            return true;
+        }
         if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir))){
             rc.buildRobot(robot, rc.getLocation().add(dir).add(dir));
+            return true;
+        }
+
+        if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir.rotateRight()))){
+            rc.buildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir.rotateRight()));
+            return true;
+        }
+        if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir.rotateLeft()))){
+            rc.buildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir.rotateLeft()));
+            return true;
+        }
+        if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir.rotateRight().rotateRight()))){
+            rc.buildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir.rotateRight().rotateRight()));
+            return true;
+        }
+        if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir.rotateLeft().rotateLeft()))){
+            rc.buildRobot(robot, rc.getLocation().add(dir).add(dir).add(dir.rotateLeft().rotateLeft()));
+            return true;
+        }
+        if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir.rotateRight()))){
+            rc.buildRobot(robot, rc.getLocation().add(dir).add(dir.rotateRight()));
+            return true;
+        }
+        if(rc.canBuildRobot(robot, rc.getLocation().add(dir).add(dir.rotateLeft()))){
+            rc.buildRobot(robot, rc.getLocation().add(dir).add(dir.rotateLeft()));
             return true;
         }
         return false;

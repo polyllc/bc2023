@@ -193,7 +193,6 @@ public class Navigation {
             for (int y = 0; y < n; y ++) {
                 MapLocation loc = new MapLocation(myLoc.x + x - radius, myLoc.y + y - radius);
                 // check if location is valid movement place (within sensor radius, on map, unoccupied, and not flooded)
-                // TODO: Implement occupation check more efficiently (currently takes 20 bytecode)
                 boolean valid = rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc);
                 validLocs[x][y] = valid;
                 if (valid) elevations[x][y] = 1; //technically it all has the same elevation so if i put it to 1 it'll work?

@@ -31,7 +31,11 @@ public class Carrier {
         int lastRound = startedRound--;
         lib = new Lib(rc);
         job = Jobs.GETTINGSRESOURCES;
-        if(rc.getRoundNum() > 120 && rc.getRoundNum() < 400){ //todo, optimize this
+        if(rc.getRoundNum() < 20){
+            primaryResource = ResourceType.MANA;
+            turnsLookingForResource = 61;
+        }
+        if(rc.getRoundNum() > 120){ //todo, optimize this
             if(rc.getRoundNum() % 2 == 0){
                 primaryResource = ResourceType.ADAMANTIUM;
             }
@@ -62,9 +66,20 @@ public class Carrier {
 
 
 
+        //todo, if someone finds a nearer adamantium/mana resource, just go there
+        //todo, bro fucking fix the discovery pathfinding, for both launcher and carrier
+
+
         if(job == Jobs.GETTINGSRESOURCES){
             turnsLookingForResource++;
             if(targetLoc == Lib.noLoc) {
+                if(turnsLookingForResource > 9 && rc.getRoundNum() < 100){
+                    if(!lib.getMana().equals(new MapLocation(0,0))){
+                        targetLoc = lib.getMana();
+                        dirGoing = Direction.CENTER;
+                        primaryResource = null;
+                    }
+                }
                 for(WellInfo loc : rc.senseNearbyWells()){
                      if(mainResource == null){
                          if(turnsLookingForResource > 50 || loc.getResourceType().equals(primaryResource)) {
@@ -72,6 +87,11 @@ public class Carrier {
                              targetLoc = loc.getMapLocation();
                              dirGoing = Direction.CENTER;
                              primaryResource = null;
+                             if(primaryResource.equals(ResourceType.MANA)){
+                                 if(lib.getMana().equals(new MapLocation(0,0))){
+                                     lib.setMana(loc.getMapLocation());
+                                 }
+                             }
                          }
                      }
                      else{
@@ -82,15 +102,15 @@ public class Carrier {
                      }
                 }
             }
-            if(targetLoc != Lib.noLoc){
+            if(targetLoc != Lib.noLoc && targetLoc != null){
                 if(targetLoc.equals(myHQ) && !lib.isFullResources()){
                     targetLoc = Lib.noLoc;
                     dirGoing = rc.getLocation().directionTo(rc.getLocation());
                 }
-                if(lib.isFullResources()){
+                if(lib.isFullResources() || rc.getRoundNum() < 100 && lib.getWeight() >= 20){
                     stopMoving = false;
+                    targetLoc = lib.getNearestHQ();
                     targetLoc = myHQ;
-                    //todo, it technically doesn't need to be your hq, just the nearest hq, probably gonna be in the shared array
                     for(Direction dir : Lib.directions){
                         if(rc.getLocation().add(dir).equals(targetLoc)){
                             transferToHQ();
@@ -111,16 +131,17 @@ public class Carrier {
         }
 
 
-        //todo, bring those free island coords to the hq so they can immediately build an anchor and new carriers can just take over an island
         if(islandLoc == Lib.noLoc){ //somehow I need to make sure that once an island is taken, don't go there anymore (just defend with launchers)
             if(lib.getIslandLocs() != null) {
                 if (lib.getIslandLocs().length > 0) {
                     islandIndex = lib.getIsland();
                     if(islandIndex != 0) {
-                        islandLoc = rc.senseNearbyIslandLocations(islandIndex)[0]; //this will always give a free island!
-                        //targetLoc = shouldIAnchor();
+                        MapLocation temp = rc.senseNearbyIslandLocations(islandIndex)[0];
+                        if(temp != null) {
+                            islandLoc = temp; //this will always give a free island!
+                            //targetLoc = shouldIAnchor();
+                        }
                     }
-                    System.out.println(islandIndex);
                 }
             }
         }
@@ -137,7 +158,6 @@ public class Carrier {
                     }
                 }
             }
-            //todo, ok so sometimes they have an anchor, but they're too stupid to realise that so they try and collect shit but they can't so they're now just stuck there, fix that
             if(islandLoc != Lib.noLoc) {
                 if (rc.canTakeAnchor(myHQ, Anchor.STANDARD)) {
                     rc.takeAnchor(myHQ, Anchor.STANDARD);
@@ -176,7 +196,7 @@ public class Carrier {
             dirGoing = dirGoing.opposite();
         }
         if(!stopMoving) {
-            if (!targetLoc.equals(Lib.noLoc)) {
+            if (targetLoc != null && !targetLoc.equals(Lib.noLoc)) {
                 nav.goTo(targetLoc);
             }
             else if (dirGoing != Direction.CENTER) {
@@ -207,13 +227,19 @@ public class Carrier {
     }
 
 
-    void attack() throws GameActionException {
+    void attack() throws GameActionException { //todo, !important this shit dont work sometimes
         for(RobotInfo robot : lib.getRobots()){
             if(robot.getTeam() != rc.getTeam()){
                 if(rc.getLocation().distanceSquaredTo(myHQ) < 30){
                     if(lib.getWeight() > 0) {
-                        if (rc.canAttack(robot.getLocation())) {
-                            rc.attack(robot.getLocation());
+                        if(rc.getLocation().distanceSquaredTo(robot.getLocation()) <= 9) {
+                            if (rc.canAttack(robot.getLocation())) {
+                                rc.attack(robot.getLocation());
+                            }
+                        }
+                        else {
+                           // stopMoving = false;
+                           // targetLoc = myHQ;
                         }
                     }
                 }
