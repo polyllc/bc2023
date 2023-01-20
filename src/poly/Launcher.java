@@ -64,6 +64,8 @@ public class Launcher {
     //todo, group up all of the launchers and attack the other launchers, don't really care about attacking the base immediately
     //todo, once at an enemy base, don't stick around! find other enemies around the map
     //todo, approach enemies, especially carriers
+    //todo, sense more effectively if a targeted robot is dead
+    //todo, running out of bytecode, ex: batsignal poly vs polyv4
 
     public void takeTurn() throws GameActionException {
 
@@ -81,7 +83,7 @@ public class Launcher {
             }
         }
         if(rc.isMovementReady()){
-           //System.out.println("2: " + Clock.getBytecodeNum());
+          // System.out.println("2: " + Clock.getBytecodeNum());
             move();
         }
        //System.out.println("3: " + Clock.getBytecodeNum());
@@ -98,7 +100,7 @@ public class Launcher {
                 targetLoc = lib.getEnemyBase();
                 job = Jobs.SURROUNDINGBASE;
             }
-           //System.out.println("5: " + Clock.getBytecodeNum());
+           //.out.println("5: " + Clock.getBytecodeNum());
         }
 
         if(rc.isActionReady()) {
@@ -120,7 +122,7 @@ public class Launcher {
                     if(robot.getTeam() != rc.getTeam()){
                         if(robot.getType() == RobotType.HEADQUARTERS){
                             enemyHQ = robot.getLocation();
-                            if(rc.getRoundNum() > 103){
+                            if(rc.getRoundNum() > 35){
                                 targetLoc = myHQ;
                                 job = Jobs.REPORTINGBASE;
                                 break;
@@ -135,7 +137,7 @@ public class Launcher {
                         }
                     }
                 }
-               //System.out.println("8: " + Clock.getBytecodeNum());
+              // System.out.println("8: " + Clock.getBytecodeNum());
             }
             if(targetLoc != Lib.noLoc){
                 //essentially, once near an enemy base, surround it!
@@ -153,18 +155,33 @@ public class Launcher {
                         targetLoc = r.getLocation();
                     }
                 }
+                if(!rc.canSenseRobot(enemyID)){
+                    enemyID = 0;
+                    job = Jobs.FINDINGENEMIES;
+                    targetLoc = Lib.noLoc;
+                }
+                else if(!lib.contains(lib.getRobots(), rc.senseRobot(enemyID))){
+                    enemyID = 0;
+                    job = Jobs.FINDINGENEMIES;
+                    targetLoc = Lib.noLoc;
+                }
             }
         }
 
 
         if(job == Jobs.SURROUNDINGBASE){ //deprecate! we should be surrounding around their base to kill off carriers, not actually surrounding the base itself
-           //System.out.println("9: " + Clock.getBytecodeNum());
+          // System.out.println("9: " + Clock.getBytecodeNum());
             if(targetLoc != Lib.noLoc){
 
                 for(RobotInfo robot : lib.getRobots()){
                     if(rc.getTeam() != robot.getTeam()){
                         if(robot.getType() == RobotType.HEADQUARTERS){
                             enemyHQ = robot.getLocation();
+                            targetLoc = robot.getLocation();
+                        }
+                        else {
+                            job = Jobs.CHASINGENEMY;
+                            enemyID = robot.getID();
                             targetLoc = robot.getLocation();
                         }
                     }
@@ -211,6 +228,7 @@ public class Launcher {
                 job = Jobs.SURROUNDINGBASE;
             }
             if(rc.getLocation().distanceSquaredTo(myHQ) < 9){
+                lib.clearEnemyHQ(lib.getEnemyBase());
                 lib.writeEnemyHQ(enemyHQ);
                 job = Jobs.SURROUNDINGBASE;
                 targetLoc = enemyHQ;

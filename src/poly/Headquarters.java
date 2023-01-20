@@ -109,12 +109,16 @@ public class Headquarters {
 
         }
 
-        if(roundsWithoutAnchor < 100 && rc.getNumAnchors(Anchor.STANDARD) < 1 || rc.getRoundNum() < 500) {
+        if(rc.getRoundNum() == 50){
+         //   rc.resign();
+        }
+
+        if(roundsWithoutAnchor < 200 && rc.getNumAnchors(Anchor.STANDARD) < 1 || rc.getNumAnchors(Anchor.STANDARD) == 1 || rc.getRoundNum() < 500) {
             spawnCarrierAndLauncher();
         }
 
 
-        rc.setIndicatorString(lib.getEnemyBase(0) + " " + lib.getEnemyBase(1) + " " + lib.getEnemyBase(2) + " " + lib.getEnemyBase(3));
+        rc.setIndicatorString("rWA: " + roundsWithoutAnchor + " A: " + rc.getNumAnchors(Anchor.STANDARD));
 
         if(rc.getRoundNum() >= 200){
 
@@ -140,8 +144,9 @@ public class Headquarters {
     }
 
     //todo, anchors are not important! if there are no troops near the hq, dont make them!
-    //todo, for some reason, the hq will not produce any carriers even though they have the resources.
+    //todo, !important for some reason, the hq will not produce any carriers even though they have the resources. (eg, cat poly vs polyv4)
     //todo, once the initial rush is sent out, don't just send all of the troops in the same direction! put them in all directions
+
 
     void firstRoundSetup(){
         quadrant = lib.getQuadrant();
@@ -157,37 +162,32 @@ public class Headquarters {
             spawn(RobotType.CARRIER,rc.getRoundNum() >= 50 ? rc.getRoundNum() % 8 : 0);
         }
         else {
-            if(rc.getRoundNum() < 100) {
+            if(rc.getRoundNum() < 35) {
 
-                if(numLaunchers < 3){
-                    switch (numLaunchers){
-                        case 0:
+                if(numLaunchers < 1){
+
                             if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2)))){ //rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))
                                 System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
-                            } break;
-
-                        case 1:
-                            if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)).rotateRight())){
-                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)).rotateRight());
-                            } break;
-
-                        case 2:
-                            if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)).rotateLeft())){
-                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)).rotateLeft());
-                            } break;
+                            }
+                            if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))){
+                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                            }
+                            if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))){
+                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                            }
 
 
-                    }
                     numLaunchers++;
                 }
 
-
-                //System.out.println("trying to build: " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)) + " " + lib.getEnemyBase() + " " + lib.getEnemyBase(hqNum-1));
-                if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))){
-                    //System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                else {
+                    //System.out.println("trying to build: " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)) + " " + lib.getEnemyBase() + " " + lib.getEnemyBase(hqNum-1));
+                    if (spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum - 1)))) { //todo, only the first 3 launchers should be spawned towards the enemy base
+                        //System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                    }
                 }
             }
-            if(spawn(RobotType.LAUNCHER,rc.getRoundNum() % 8)){
+            else if(spawn(RobotType.LAUNCHER,rc.getRoundNum() % 8)){
             }
         }
     }

@@ -11,7 +11,7 @@ public class Carrier {
     MapLocation myHQ;
     Jobs job;
     WellInfo[] resourceLocs = new WellInfo[64]; //probably overkill
-    WellInfo mainResource = null;
+    MapLocation mainResource = null;
     boolean stopMoving = false;
     ResourceType primaryResource;
     int turnsLookingForResource; //after like 80 rounds, just go to the one that you see
@@ -35,7 +35,7 @@ public class Carrier {
             primaryResource = ResourceType.MANA;
             turnsLookingForResource = 61;
         }
-        if(rc.getRoundNum() > 120){ //todo, optimize this
+        if(rc.getRoundNum() > 120){
             if(rc.getRoundNum() % 2 == 0){
                 primaryResource = ResourceType.ADAMANTIUM;
             }
@@ -63,39 +63,70 @@ public class Carrier {
                 }
             }
         }
+        if(startedRound+2 < rc.getRoundNum()){
+            if(myHQ == null){
+                myHQ = lib.getNearestHQ();
+            }
+        }
 
-
-
-        //todo, if someone finds a nearer adamantium/mana resource, just go there
         //todo, bro fucking fix the discovery pathfinding, for both launcher and carrier
 
 
         if(job == Jobs.GETTINGSRESOURCES){
             turnsLookingForResource++;
-            if(targetLoc == Lib.noLoc) {
+            if(targetLoc == Lib.noLoc || targetLoc == null) {
                 if(turnsLookingForResource > 9 && rc.getRoundNum() < 100){
                     if(!lib.getMana().equals(new MapLocation(0,0))){
                         targetLoc = lib.getMana();
+                        mainResource = lib.getMana();
                         dirGoing = Direction.CENTER;
                         primaryResource = null;
                     }
                 }
+
+                if(turnsLookingForResource > 30){
+                    if(primaryResource != null) {
+                        if (primaryResource.equals(ResourceType.MANA)) {
+                            if (!lib.getMana().equals(new MapLocation(0, 0))) {
+                                targetLoc = lib.getMana();
+                                mainResource = lib.getMana();
+                                dirGoing = Direction.CENTER;
+                                primaryResource = null;
+                            }
+                        }
+                        else if (primaryResource.equals(ResourceType.ADAMANTIUM)) {
+                            if (!lib.getAda().equals(new MapLocation(0, 0))) {
+                                targetLoc = lib.getAda();
+                                mainResource = lib.getMana();
+                                dirGoing = Direction.CENTER;
+                                primaryResource = null;
+                            }
+                        }
+                    }
+                }
+
                 for(WellInfo loc : rc.senseNearbyWells()){
                      if(mainResource == null){
                          if(turnsLookingForResource > 50 || loc.getResourceType().equals(primaryResource)) {
-                             mainResource = loc;
+                             mainResource = loc.getMapLocation();
                              targetLoc = loc.getMapLocation();
                              dirGoing = Direction.CENTER;
-                             primaryResource = null;
-                             if(primaryResource.equals(ResourceType.MANA)){
-                                 if(lib.getMana().equals(new MapLocation(0,0))){
-                                     lib.setMana(loc.getMapLocation());
+                             if(primaryResource != null) {
+                                 if (primaryResource.equals(ResourceType.MANA)) {
+                                     if (lib.getMana().equals(new MapLocation(0, 0))) {
+                                         lib.setMana(loc.getMapLocation());
+                                     }
+                                 }
+                                 if (primaryResource.equals(ResourceType.ADAMANTIUM)) {
+                                     if (lib.getAda().equals(new MapLocation(0, 0))) {
+                                         lib.setAda(loc.getMapLocation());
+                                     }
                                  }
                              }
                          }
                      }
                      else{
-                         targetLoc = mainResource.getMapLocation();
+                         targetLoc = mainResource;
                      }
                      if(!lib.contains(resourceLocs, loc)){
                          //resourceLocs[]
@@ -114,7 +145,7 @@ public class Carrier {
                     for(Direction dir : Lib.directions){
                         if(rc.getLocation().add(dir).equals(targetLoc)){
                             transferToHQ();
-                            targetLoc = mainResource.getMapLocation();
+                            targetLoc = mainResource;
                             dirGoing = Direction.CENTER;
                         }
                     }
@@ -147,14 +178,16 @@ public class Carrier {
         }
         else{
 
-            if(rc.canSenseLocation(targetLoc)){
-                if(rc.senseIsland(targetLoc) != -1) {
-                    if (rc.senseTeamOccupyingIsland(rc.senseIsland(targetLoc)) == rc.getTeam()) {
-                        islandLoc = Lib.noLoc;
-                        targetLoc = Lib.noLoc; //this may loop back to the island that is still occupied
-                        job = Jobs.GETTINGSRESOURCES;
-                        dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2));
-                        System.out.println("occupied already");
+            if(targetLoc != null) {
+                if (rc.canSenseLocation(targetLoc)) {
+                    if (rc.senseIsland(targetLoc) != -1) {
+                        if (rc.senseTeamOccupyingIsland(rc.senseIsland(targetLoc)) == rc.getTeam()) {
+                            islandLoc = Lib.noLoc;
+                            targetLoc = Lib.noLoc; //this may loop back to the island that is still occupied
+                            job = Jobs.GETTINGSRESOURCES;
+                            dirGoing = rc.getLocation().directionTo(new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2));
+                            System.out.println("occupied already");
+                        }
                     }
                 }
             }
@@ -197,7 +230,7 @@ public class Carrier {
         }
         if(!stopMoving) {
             if (targetLoc != null && !targetLoc.equals(Lib.noLoc)) {
-                nav.goTo(targetLoc);
+                nav.goTo(targetLoc, false);
             }
             else if (dirGoing != Direction.CENTER) {
                 nav.goTo(dirGoing);

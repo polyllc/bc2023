@@ -12,6 +12,7 @@ public class Navigation {
     MapLocation bugNavTarget = null;
 
 
+    //todo, make sure that those currents are not able to be stepped on
 
     public Navigation(RobotController robot){
         rc = robot;
@@ -193,7 +194,20 @@ public class Navigation {
             for (int y = 0; y < n; y ++) {
                 MapLocation loc = new MapLocation(myLoc.x + x - radius, myLoc.y + y - radius);
                 // check if location is valid movement place (within sensor radius, on map, unoccupied, and not flooded)
-                boolean valid = rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc);
+                boolean valid = false;
+                if(!rc.canSenseLocation(loc)){
+
+                }
+                else if(rc.isLocationOccupied(loc)){
+
+                }
+                else if(rc.senseMapInfo(loc).getCurrentDirection() != Direction.CENTER){
+
+                }
+                else {
+                    valid = true;
+                }
+               // boolean valid = rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc) && rc.senseMapInfo(loc).getCurrentDirection() == Direction.CENTER;
                 validLocs[x][y] = valid;
                 if (valid) elevations[x][y] = 1; //technically it all has the same elevation so if i put it to 1 it'll work?
             }
@@ -232,7 +246,7 @@ public class Navigation {
 
 
         // now iterate
-        for (int counter = 0; counter < iterations; counter ++) {
+        for (int counter = 0; counter < iterations; counter++) {
             for (int x = 0; x < n-1; x ++) {
                 for (int y = 0; y < n-1; y ++) {
                     //System.out.println((Clock.getBytecodeNum() - initialBytecodeCount));
@@ -258,7 +272,7 @@ public class Navigation {
                     }
                 }
             }
-            //System.out.println((Clock.getBytecodeNum() - initialBytecodeCount));
+           // System.out.println((Clock.getBytecodeNum() - initialBytecodeCount));
             //System.out.println((Clock.getBytecodeNum() - initialBytecodeCount));
         }
 
@@ -336,8 +350,13 @@ public class Navigation {
 
     // default parameters
     boolean navTo(MapLocation destination) throws GameActionException {
-        return navTo(destination, 2, 3);
+        return navTo(destination, 1, 1);
     }
+
+
+
+    //from kryptonite
+
 
 
 

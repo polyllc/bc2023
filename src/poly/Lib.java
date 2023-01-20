@@ -2,6 +2,9 @@ package poly;
 
 import battlecode.common.*;
 
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 public class Lib {
@@ -99,7 +102,7 @@ public class Lib {
     public RobotInfo[] getRobots(){
         roundNum = rc.getRoundNum();
         if(currentRoundRobots.length == 0 || lastRoundNum < roundNum){
-            currentRoundRobots = sort(rc.senseNearbyRobots());
+                currentRoundRobots = sort(rc.senseNearbyRobots());
             lastRoundNum = roundNum;
         }
         return currentRoundRobots;
@@ -459,6 +462,17 @@ public class Lib {
         return new MapLocation(rc.readSharedArray(40), rc.readSharedArray(41));
     }
 
+    void setAda(MapLocation loc) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)){
+            rc.writeSharedArray(42,  loc.x);
+            rc.writeSharedArray(43,  loc.y);
+        }
+    }
+
+    MapLocation getAda() throws GameActionException {
+        return new MapLocation(rc.readSharedArray(42), rc.readSharedArray(43));
+    }
+
     void updateHQNum() throws GameActionException {
         if(rc.canWriteSharedArray(0,0)) {
             rc.writeSharedArray(63, rc.readSharedArray(63) + 1);
@@ -469,18 +483,32 @@ public class Lib {
         return rc.readSharedArray(63);
     }
 
-    public static RobotInfo[] sort(RobotInfo[] array) {
-        int n = array.length;
-        for (int i = 0; i < n-1; i++) {
-            for (int j = 0; j < n-i-1; j++) {
-                if (array[j].getHealth() < array[j+1].getHealth()) {
-                    RobotInfo temp = array[j];
-                    array[j] = array[j+1];
-                    array[j+1] = temp;
+    public RobotInfo[] sort(RobotInfo[] items){ //dir == true? smallest to largest, vice versa
+        if(items.length > 0) {
+            RobotInfo lowest = items[0];
+            int lowestIndex = 0;
+            int i = 0;
+            for (RobotInfo r : items) {
+                if (rc.getTeam() != r.getTeam()){
+                    if(lowest.getTeam() == rc.getTeam()){
+                        lowest = r;
+                        lowestIndex = i;
+                    }
+                    if(lowest.getHealth() > r.getHealth()){
+                        lowest = r;
+                        lowestIndex = i;
+                    }
                 }
+                i++;
+            }
+
+            if(items.length > 1) {
+                RobotInfo temp = items[0];
+                items[0] = lowest;
+                items[lowestIndex] = temp;
             }
         }
-        return array;
+        return items;
     }
 
 
