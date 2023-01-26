@@ -87,21 +87,21 @@ public class Headquarters {
                 if (rc.getRoundNum() % carrierModifier == 0) {
                     if (w.getResourceType() == ResourceType.MANA) {
                         lib.setMana(w.getMapLocation());
-                        if (numCarriers < 4) { //make these corners based on where the base is, where the first corner is nearest to the center
+                   //     if (numCarriers < 4) { //make these corners based on where the base is, where the first corner is nearest to the center
                             if (spawn(RobotType.CARRIER, rc.getLocation().directionTo(w.getMapLocation()))) {
                                 System.out.println("spawn based on near mana");
                                 numCarriers++;
                             }
-                        }
+                       // }
                     }
                     if(w.getResourceType() == ResourceType.ADAMANTIUM){
                         lib.setAda(w.getMapLocation());
-                        if (numCarriers >= 4) { //make these corners based on where the base is, where the first corner is nearest to the center
+                       // if (numCarriers >= 4) { //make these corners based on where the base is, where the first corner is nearest to the center
                             if (spawn(RobotType.CARRIER, rc.getLocation().directionTo(w.getMapLocation()))) {
                                 System.out.println("spawn based on near ada");
                                 numCarriers++;
                             }
-                        }
+                       // }
                     }
                 }
             }
@@ -110,8 +110,8 @@ public class Headquarters {
 
         }
 
-        if(rc.getRoundNum() == 50){
-              //  rc.resign();
+        if(rc.getRoundNum() == 100){
+                //rc.resign();
         }
 
         if(roundsWithoutAnchor < 200 && rc.getNumAnchors(Anchor.STANDARD) < 1 || rc.getNumAnchors(Anchor.STANDARD) == 1 || rc.getRoundNum() < 500) {
@@ -152,14 +152,22 @@ public class Headquarters {
 
     void spawnCarrierAndLauncher() throws GameActionException {
         if(rc.getRoundNum() % carrierModifier == 0){
-            if(numCarriers < 6 && rc.getRoundNum() < 50){ //make these corners based on where the base is, where the first corner is nearest to the center
+
+            if(numCarriers == 0){
+                System.out.println("first carrier");
+                if(spawn(RobotType.CARRIER, rc.getLocation().directionTo(new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2)))){
+                    numCarriers++;
+                }
+            }
+
+             if(numCarriers < 6 && rc.getRoundNum() < 50){ //make these corners based on where the base is, where the first corner is nearest to the center
                 if(spawn(RobotType.CARRIER, Lib.directions[(numCarriers*2+1) % 8])){ //skip the corner closest to the hq
                     System.out.println("spawn based on first 6 in dir: " + Lib.directions[(numCarriers*2+1) % 8]);
                     numCarriers++;
                 }
             }
             else if(spawn(RobotType.CARRIER,rc.getRoundNum() >= 50 ? rc.getRoundNum() % 8 : 0)){
-                System.out.println("spawn in each dir after round 50");
+                //System.out.println("spawn in each dir after round 50");
             }
         }
         else {
@@ -168,13 +176,13 @@ public class Headquarters {
                 if(numLaunchers < 1){
 
                             if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2)))){ //rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))
-                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                               // System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
                             }
                             if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))){
-                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                             //   System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
                             }
                             if(spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)))){
-                                System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
+                               // System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
                             }
 
 

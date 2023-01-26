@@ -81,7 +81,7 @@ public class Launcher {
 
        //System.out.println("1: " + Clock.getBytecodeNum());
 
-        if(dirGoing != Direction.CENTER){ //todo, this actually doesn't work wtf
+        if(dirGoing != Direction.CENTER){ //this actually doesn't work wtf
             turnInDir++;
             if(turnInDir > 65){
                 dirGoing = Lib.directions[(int) Math.floor(Math.random() * 8)];

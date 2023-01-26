@@ -95,7 +95,7 @@ public class Carrier {
                     }
                 }
 
-                if(turnsLookingForResource > 1){
+                if(turnsLookingForResource > 10){
                     if(primaryResource != null) {
                         if (primaryResource.equals(ResourceType.MANA)) {
                             if (!lib.getMana().equals(new MapLocation(0, 0))) {
@@ -233,6 +233,12 @@ public class Carrier {
                         if(rc.canCollectResource(rc.getLocation().add(dir),-1)){
                             rc.collectResource(rc.getLocation().add(dir), -1);
                         }
+                    }
+                }
+                if(rc.getLocation().equals(targetLoc)){
+                    stopMoving = true;
+                    if(rc.canCollectResource(rc.getLocation(),-1)){
+                        rc.collectResource(rc.getLocation(), -1);
                     }
                 }
             }
