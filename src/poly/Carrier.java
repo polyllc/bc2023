@@ -35,12 +35,12 @@ public class Carrier {
             primaryResource = ResourceType.MANA;
             turnsLookingForResource = 61;
         }
-        if(rc.getRoundNum() > 120){
+        if(rc.getRoundNum() > 1){
             if(rc.getRoundNum() % 2 == 0){
                 primaryResource = ResourceType.ADAMANTIUM;
             }
             else {
-                primaryResource = ResourceType.MANA;
+                primaryResource = ResourceType.MANA; //todo, prioritize
             }
         }
         else {
@@ -97,7 +97,7 @@ public class Carrier {
                         else if (primaryResource.equals(ResourceType.ADAMANTIUM)) {
                             if (!lib.getAda().equals(new MapLocation(0, 0))) {
                                 targetLoc = lib.getAda();
-                                mainResource = lib.getMana();
+                                mainResource = lib.getAda();
                                 dirGoing = Direction.CENTER;
                                 primaryResource = null;
                             }
@@ -113,14 +113,10 @@ public class Carrier {
                              dirGoing = Direction.CENTER;
                              if(primaryResource != null) {
                                  if (primaryResource.equals(ResourceType.MANA)) {
-                                     if (lib.getMana().equals(new MapLocation(0, 0))) {
-                                         lib.setMana(loc.getMapLocation());
-                                     }
+                                     lib.setMana(loc.getMapLocation());
                                  }
                                  if (primaryResource.equals(ResourceType.ADAMANTIUM)) {
-                                     if (lib.getAda().equals(new MapLocation(0, 0))) {
-                                         lib.setAda(loc.getMapLocation());
-                                     }
+                                     lib.setAda(loc.getMapLocation());
                                  }
                              }
                          }
@@ -134,6 +130,46 @@ public class Carrier {
                 }
             }
             if(targetLoc != Lib.noLoc && targetLoc != null){
+
+                //implement surrounded code here
+
+                if(senseSurrounded(targetLoc)){
+                    if(targetLoc.equals(lib.getAda())){
+                        if(!lib.getAda(1).equals(Lib.noLoc)){
+                            targetLoc = lib.getAda(1);
+                        }
+                    }
+                    else if(targetLoc.equals(lib.getMana())){
+                        if(!lib.getMana(1).equals(Lib.noLoc)){
+                            targetLoc = lib.getMana(1);
+                        }
+                    }
+                    else {
+                        targetLoc = Lib.noLoc;
+                    }
+                }
+
+
+                if(rc.canSenseLocation(targetLoc)){
+                    if(rc.senseWell(targetLoc) == null){
+                        RobotInfo info = rc.senseRobotAtLocation(targetLoc);
+                        if(info == null){ //meaning most likely a bot or hq
+                            targetLoc = Lib.noLoc;
+                        }
+                        else {
+                            if(info.getTeam() != rc.getTeam()){
+                                targetLoc = Lib.noLoc;
+                            }
+                            else if(info.getType() != RobotType.HEADQUARTERS){
+                                targetLoc = Lib.noLoc;
+                            }
+                            else if(!rc.sensePassability(targetLoc)){ //if it's not a bot, then its a wall
+                                targetLoc = Lib.noLoc;
+                            }
+                        }
+                    }
+                }
+
                 if(targetLoc.equals(myHQ) && !lib.isFullResources()){
                     targetLoc = Lib.noLoc;
                     dirGoing = rc.getLocation().directionTo(rc.getLocation());
@@ -141,9 +177,22 @@ public class Carrier {
                 if(lib.isFullResources() || rc.getRoundNum() < 100 && lib.getWeight() >= 20){
                     stopMoving = false;
                     targetLoc = lib.getNearestHQ();
-                    targetLoc = myHQ;
+                    //System.out.println("nearest hq: " + );
+                    //targetLoc = myHQ;
                     for(Direction dir : Lib.directions){
                         if(rc.getLocation().add(dir).equals(targetLoc)){
+                            if(primaryResource != null) {
+                                if (primaryResource.equals(ResourceType.MANA)) {
+                                    if (lib.getMana().equals(new MapLocation(0, 0))) {
+                                        lib.setMana(mainResource);
+                                    }
+                                }
+                                if (primaryResource.equals(ResourceType.ADAMANTIUM)) {
+                                    if (lib.getAda().equals(new MapLocation(0, 0))) {
+                                        lib.setAda(mainResource);
+                                    }
+                                }
+                            }
                             transferToHQ();
                             targetLoc = mainResource;
                             dirGoing = Direction.CENTER;
@@ -260,7 +309,7 @@ public class Carrier {
     }
 
 
-    void attack() throws GameActionException { //todo, !important this shit dont work sometimes
+    void attack() throws GameActionException {
         for(RobotInfo robot : lib.getRobots()){
             if(robot.getTeam() != rc.getTeam()){
                 if(rc.getLocation().distanceSquaredTo(myHQ) < 30){
@@ -278,6 +327,23 @@ public class Carrier {
                 }
             }
         }
+    }
+
+    boolean senseSurrounded(MapLocation loc) throws GameActionException { //todo, implement
+        if(!loc.equals(Lib.noLoc)){
+            int i = 0;
+            for(Direction dir : Lib.directions){
+                if(rc.canSenseLocation(loc.add(dir))) {
+                    if(!rc.getLocation().equals(loc.add(dir))) {
+                        if (!rc.sensePassability(loc.add(dir)) || rc.senseRobotAtLocation(loc.add(dir)) != null) {
+                            i++;
+                        }
+                    }
+                }
+            }
+            return i == 8;
+        }
+        return false;
     }
 
     MapLocation shouldIAnchor(){

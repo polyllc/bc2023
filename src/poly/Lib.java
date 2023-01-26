@@ -139,6 +139,15 @@ public class Lib {
         return false;
     }
 
+    public boolean contains(MapLocation[] locs, MapLocation loc){
+        for(MapLocation l : locs){
+            if(l.equals(loc)){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean contains(int[] ints, int i){
         for(int j : ints){
             if(j == i){
@@ -451,26 +460,51 @@ public class Lib {
         return locs;
     }
 
-    void setMana(MapLocation loc) throws GameActionException {
-        if(rc.canWriteSharedArray(0,0)){
-            rc.writeSharedArray(40,  loc.x);
-            rc.writeSharedArray(41,  loc.y);
+    void setMana(MapLocation mana) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)) {
+            if (getMana(0) == noLoc) {
+                rc.writeSharedArray(40,mana.x);
+                rc.writeSharedArray(41,mana.y);
+            }
+            else if (getMana(1) == noLoc) {
+                rc.writeSharedArray(42,mana.x);
+                rc.writeSharedArray(43,mana.y);
+            }
         }
+    }
+
+    MapLocation getMana(int index) throws GameActionException {
+        if(!new MapLocation(rc.readSharedArray((index * 2)+40), rc.readSharedArray(40+(index*2))).equals(new MapLocation(0,0))){
+            return new MapLocation(rc.readSharedArray((index * 2)+40), rc.readSharedArray(40+(index*2)));
+        }
+        return noLoc;
     }
 
     MapLocation getMana() throws GameActionException {
         return new MapLocation(rc.readSharedArray(40), rc.readSharedArray(41));
     }
 
-    void setAda(MapLocation loc) throws GameActionException {
-        if(rc.canWriteSharedArray(0,0)){
-            rc.writeSharedArray(42,  loc.x);
-            rc.writeSharedArray(43,  loc.y);
+    void setAda(MapLocation ada) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)) {
+            if (getAda(0) == noLoc) {
+                rc.writeSharedArray(40,ada.x);
+                rc.writeSharedArray(41,ada.y);
+            }
+            else if (getAda(1) == noLoc) {
+                rc.writeSharedArray(42,ada.x);
+                rc.writeSharedArray(43,ada.y);
+            }
         }
     }
 
     MapLocation getAda() throws GameActionException {
-        return new MapLocation(rc.readSharedArray(42), rc.readSharedArray(43));
+        return new MapLocation(rc.readSharedArray(44), rc.readSharedArray(45));
+    }
+    MapLocation getAda(int index) throws GameActionException {
+        if(!new MapLocation(rc.readSharedArray((index * 2)+44), rc.readSharedArray(45+(index*2))).equals(new MapLocation(0,0))){
+            return new MapLocation(rc.readSharedArray((index * 2)+44), rc.readSharedArray(45+(index*2)));
+        }
+        return noLoc;
     }
 
     void updateHQNum() throws GameActionException {

@@ -19,6 +19,7 @@ public class Headquarters {
         rc = robot;
         lib = new Lib(rc);
         lib.writeHQ(rc.getLocation());
+       // System.out.println(rc.getLocation());
         lib.updateHQNum();
         hqNum = lib.getHQNum();
         enemies[0] = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
@@ -28,17 +29,13 @@ public class Headquarters {
 
     public void takeTurn() throws GameActionException {
 
-        if(rc.getRoundNum() == 50){
-            lib.clearEnemyHQ(lib.getEnemyBase());
-            lib.clearEnemyHQ(lib.getEnemyBase());
-            lib.clearEnemyHQ(lib.getEnemyBase());
-            lib.clearEnemyHQ(lib.getEnemyBase());
-        }
 
         if(rc.getRoundNum() == 1){
             firstRoundSetup();
         }
         if(rc.getRoundNum() == 2){
+            lib.writeHQ(rc.getLocation());
+            lib.writeHQ(rc.getLocation());
             lib.writeHQ(rc.getLocation());
         }
         if(rc.getRoundNum() == 3){
@@ -89,6 +86,7 @@ public class Headquarters {
             for(WellInfo w : rc.senseNearbyWells()) {
                 if (rc.getRoundNum() % carrierModifier == 0) {
                     if (w.getResourceType() == ResourceType.MANA) {
+                        lib.setMana(w.getMapLocation());
                         if (numCarriers < 4) { //make these corners based on where the base is, where the first corner is nearest to the center
                             if (spawn(RobotType.CARRIER, rc.getLocation().directionTo(w.getMapLocation()))) {
                                 numCarriers++;
@@ -96,6 +94,7 @@ public class Headquarters {
                         }
                     }
                     if(w.getResourceType() == ResourceType.ADAMANTIUM){
+                        lib.setAda(w.getMapLocation());
                         if (numCarriers >= 4) { //make these corners based on where the base is, where the first corner is nearest to the center
                             if (spawn(RobotType.CARRIER, rc.getLocation().directionTo(w.getMapLocation()))) {
                                 numCarriers++;
@@ -109,8 +108,8 @@ public class Headquarters {
 
         }
 
-        if(rc.getRoundNum() == 50){
-         //   rc.resign();
+        if(rc.getRoundNum() == 300){
+            //rc.resign();
         }
 
         if(roundsWithoutAnchor < 200 && rc.getNumAnchors(Anchor.STANDARD) < 1 || rc.getNumAnchors(Anchor.STANDARD) == 1 || rc.getRoundNum() < 500) {
@@ -118,7 +117,7 @@ public class Headquarters {
         }
 
 
-        rc.setIndicatorString("rWA: " + roundsWithoutAnchor + " A: " + rc.getNumAnchors(Anchor.STANDARD));
+        rc.setIndicatorString("e1: " + lib.getBase() + " e2: " + lib.getBase(1) +" e3: " + lib.getBase(2) +" e4: " + lib.getBase(3));
 
         if(rc.getRoundNum() >= 200){
 
@@ -143,9 +142,6 @@ public class Headquarters {
         }
     }
 
-    //todo, anchors are not important! if there are no troops near the hq, dont make them!
-    //todo, !important for some reason, the hq will not produce any carriers even though they have the resources. (eg, cat poly vs polyv4)
-    //todo, once the initial rush is sent out, don't just send all of the troops in the same direction! put them in all directions
 
 
     void firstRoundSetup(){
@@ -182,7 +178,7 @@ public class Headquarters {
 
                 else {
                     //System.out.println("trying to build: " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)) + " " + lib.getEnemyBase() + " " + lib.getEnemyBase(hqNum-1));
-                    if (spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum - 1)))) { //todo, only the first 3 launchers should be spawned towards the enemy base
+                    if (spawn(RobotType.LAUNCHER, rc.getLocation().directionTo(lib.getEnemyBase(hqNum - 1)))) {
                         //System.out.println("spawning " + rc.getLocation().directionTo(lib.getEnemyBase(hqNum-1)));
                     }
                 }

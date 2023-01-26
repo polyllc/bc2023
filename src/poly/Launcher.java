@@ -2,6 +2,8 @@ package poly;
 
 import battlecode.common.*;
 
+import java.util.Arrays;
+
 public class Launcher {
     RobotController rc;
     Navigation nav;
@@ -15,6 +17,10 @@ public class Launcher {
     int turnInDir = 0;
     int turnsJob = 0;
     int enemyID;
+    int dontSurroundBaseFor = 0;
+    MapLocation[] enemyBaseAlreadyThere = new MapLocation[4];
+    int enemyBaseI = 0;
+
 
     public Launcher(RobotController robot){
         rc = robot;
@@ -36,8 +42,12 @@ public class Launcher {
         if(rc.getRoundNum() < 6) {
             stopMoving = true;
         }
+
+        enemyBaseAlreadyThere[0] = Lib.noLoc;
+        enemyBaseAlreadyThere[1] = Lib.noLoc;
+        enemyBaseAlreadyThere[2] = Lib.noLoc;
+        enemyBaseAlreadyThere[3] = Lib.noLoc;
     }
-    //todo, maybe once after like round something, group up all of the launchers and attack at once???
     enum Jobs {
         FINDINGENEMIES,
         SURROUNDINGBASE,
@@ -61,11 +71,8 @@ public class Launcher {
     //separate them into groups with different tasks, there is still a lot of space in the array
 
     //todo, defend base more
-    //todo, group up all of the launchers and attack the other launchers, don't really care about attacking the base immediately
+    //todo, group up all of the launchers and attack the other launchers, don't really care about attacking the base immediately (if attacking the base the first time failed)
     //todo, once at an enemy base, don't stick around! find other enemies around the map
-    //todo, approach enemies, especially carriers
-    //todo, sense more effectively if a targeted robot is dead
-    //todo, running out of bytecode, ex: batsignal poly vs polyv4
 
     public void takeTurn() throws GameActionException {
 
@@ -75,7 +82,7 @@ public class Launcher {
 
        //System.out.println("1: " + Clock.getBytecodeNum());
 
-        if(dirGoing != Direction.CENTER){
+        if(dirGoing != Direction.CENTER){ //todo, this actually doesn't work wtf
             turnInDir++;
             if(turnInDir > 65){
                 dirGoing = Lib.directions[(int) Math.floor(Math.random() * 8)];
@@ -112,7 +119,8 @@ public class Launcher {
                 //find enemy bases, we'll surround them
                 //whatever is first, anchor or base
                 //if anchor, we destroy
-                if(lib.getEnemyBase() != Lib.noLoc && rc.getRoundNum() > 50){
+                if(lib.getEnemyBase() != Lib.noLoc && rc.getRoundNum() > 50 && !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase())){ //todo, shit dont work
+                    System.out.println("from lib.getenemybase() " + !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase()) + " " + lib.getEnemyBase() + " " + Arrays.toString(enemyBaseAlreadyThere));
                     enemyHQ = lib.getEnemyBase();
                     targetLoc = enemyHQ;
                     job = Jobs.SURROUNDINGBASE;
@@ -122,12 +130,12 @@ public class Launcher {
                     if(robot.getTeam() != rc.getTeam()){
                         if(robot.getType() == RobotType.HEADQUARTERS){
                             enemyHQ = robot.getLocation();
-                            if(rc.getRoundNum() > 35){
+                            if(rc.getRoundNum() > 35 && !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase())){
                                 targetLoc = myHQ;
                                 job = Jobs.REPORTINGBASE;
                                 break;
                             }
-                            targetLoc = robot.getLocation();
+                            //targetLoc = robot.getLocation();
                             job = Jobs.SURROUNDINGBASE;
 
                         } else {
@@ -142,6 +150,11 @@ public class Launcher {
             if(targetLoc != Lib.noLoc){
                 //essentially, once near an enemy base, surround it!
                 //also hit enemy amplifiers
+                if(rc.canSenseLocation(targetLoc)) {
+                    if (rc.senseRobotAtLocation(targetLoc) == null) {
+                        targetLoc = Lib.noLoc;
+                    }
+                }
             }
         }
 
@@ -155,7 +168,7 @@ public class Launcher {
                         targetLoc = r.getLocation();
                     }
                 }
-                if(!rc.canSenseRobot(enemyID)){
+                if(!rc.canSenseRobot(enemyID)){ //todo, it should probably go somewhere after this, right now they're just dicking around being completely useless
                     enemyID = 0;
                     job = Jobs.FINDINGENEMIES;
                     targetLoc = Lib.noLoc;
@@ -169,7 +182,7 @@ public class Launcher {
         }
 
 
-        if(job == Jobs.SURROUNDINGBASE){ //deprecate! we should be surrounding around their base to kill off carriers, not actually surrounding the base itself
+        if(job == Jobs.SURROUNDINGBASE){
           // System.out.println("9: " + Clock.getBytecodeNum());
             if(targetLoc != Lib.noLoc){
 
@@ -187,7 +200,7 @@ public class Launcher {
                     }
                 }
 
-                if(rc.canSenseLocation(targetLoc)){
+                if(rc.canSenseLocation(targetLoc)){ //todo, sometimes this shit dont work (ex pit polyv5 vs poly)
                     if(rc.canSenseRobotAtLocation(targetLoc)){
                         if(rc.senseRobotAtLocation(targetLoc) == null){
                             lib.clearEnemyHQ(targetLoc);
@@ -261,16 +274,17 @@ public class Launcher {
 
 
     void statusReport(){
-        rc.setIndicatorString("targetLoc: " + targetLoc +
-                "\njob: " + job +
-                "\ndirGoing: " + dirGoing +
-                "\nposition: " + rc.getLocation() +
-                "\n");
+        rc.setIndicatorString(Arrays.toString(enemyBaseAlreadyThere));
+        rc.setIndicatorString("t: " + targetLoc +
+               "\nj: " + job +
+               "\nd: " + dirGoing +
+              "\nmyhq: " + myHQ +
+               "\n");
     }
 
     void attack() throws GameActionException {
 
-        if(job == Jobs.CHASINGENEMY) {
+        if(job == Jobs.CHASINGENEMY) {  //todo, still not attacking the lowest health enemy, all of the first 3 launchers should be attacking 1 enemy at once
             if (rc.canSenseRobot(enemyID)){
                 RobotInfo enemy = rc.senseRobot(enemyID);
                 if(rc.canAttack(enemy.getLocation())){
@@ -317,25 +331,16 @@ public class Launcher {
             if(enemyHQ.equals(Lib.noLoc)){
                 enemyHQ = targetLoc;
             }
-            if(senseSurrounded()){
-                if(rc.getRoundNum() > 300 && rc.getRoundNum() % 2 == 0) {
-                    targetLoc = Lib.noLoc;
-                    dirGoing = Lib.directions[(int) Math.floor(Math.random() * 8)];
-                    enemyHQ = Lib.noLoc;
-                }
+            if(!lib.contains(enemyBaseAlreadyThere, targetLoc)){ //todo, shit dont work
+                System.out.println("added " + targetLoc + " " + Arrays.toString(enemyBaseAlreadyThere));
+                enemyBaseAlreadyThere[enemyBaseI] = targetLoc;
+                enemyBaseI++;
             }
-            if(rc.getLocation().equals(targetLoc)){ //meaning right next to
-              //  stopMoving = true;
-            }
-            else { //get to a place around it
-                for(Direction dir : Lib.directions){
-                    if(rc.canSenseLocation(enemyHQ.add(dir))) {
-                        if (rc.sensePassability(enemyHQ.add(dir)) && rc.senseRobotAtLocation(enemyHQ.add(dir)) == null) {
-                            targetLoc = enemyHQ.add(dir); //um how well will that work? we'll see!
-                        }
-                    }
-                }
-            }
+            targetLoc = Lib.noLoc;
+            dirGoing = enemyHQ.directionTo(rc.getLocation());
+            job = Jobs.FINDINGENEMIES;
+            //System.out.println("deleted enemy base");
+
         }
     }
 

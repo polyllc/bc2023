@@ -12,7 +12,6 @@ public class Navigation {
     MapLocation bugNavTarget = null;
 
 
-    //todo, make sure that those currents are not able to be stepped on
 
     public Navigation(RobotController robot){
         rc = robot;
