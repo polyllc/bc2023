@@ -484,15 +484,36 @@ public class Lib {
         return new MapLocation(rc.readSharedArray(40), rc.readSharedArray(41));
     }
 
+    void clearMana(MapLocation hq) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)) {
+            if(getMana(0).equals(hq)){
+                rc.writeSharedArray(0,0);
+                rc.writeSharedArray(1,0);
+            }
+            else if(getMana(1).equals(hq)){
+                rc.writeSharedArray(2,0);
+                rc.writeSharedArray(3,0);
+            }
+            else if(getMana(2).equals(hq)){
+                rc.writeSharedArray(4,0);
+                rc.writeSharedArray(5,0);
+            }
+            else if(getMana(3).equals(hq)){
+                rc.writeSharedArray(6,0);
+                rc.writeSharedArray(7,0);
+            }
+        }
+    }
+
     void setAda(MapLocation ada) throws GameActionException {
         if(rc.canWriteSharedArray(0,0)) {
             if (getAda(0) == noLoc) {
-                rc.writeSharedArray(40,ada.x);
-                rc.writeSharedArray(41,ada.y);
+                rc.writeSharedArray(44,ada.x);
+                rc.writeSharedArray(45,ada.y);
             }
             else if (getAda(1) == noLoc) {
-                rc.writeSharedArray(42,ada.x);
-                rc.writeSharedArray(43,ada.y);
+                rc.writeSharedArray(46,ada.x);
+                rc.writeSharedArray(47,ada.y);
             }
         }
     }
@@ -505,6 +526,27 @@ public class Lib {
             return new MapLocation(rc.readSharedArray((index * 2)+44), rc.readSharedArray(45+(index*2)));
         }
         return noLoc;
+    }
+
+    void clearAda(MapLocation hq) throws GameActionException {
+        if(rc.canWriteSharedArray(0,0)) {
+            if(getAda(0).equals(hq)){
+                rc.writeSharedArray(0,0);
+                rc.writeSharedArray(1,0);
+            }
+            else if(getAda(1).equals(hq)){
+                rc.writeSharedArray(2,0);
+                rc.writeSharedArray(3,0);
+            }
+            else if(getAda(2).equals(hq)){
+                rc.writeSharedArray(4,0);
+                rc.writeSharedArray(5,0);
+            }
+            else if(getAda(3).equals(hq)){
+                rc.writeSharedArray(6,0);
+                rc.writeSharedArray(7,0);
+            }
+        }
     }
 
     void updateHQNum() throws GameActionException {

@@ -50,9 +50,8 @@ public class Launcher {
     }
     enum Jobs {
         FINDINGENEMIES,
-        SURROUNDINGBASE,
-        KILLINGENEMIES, //pretty sure this will be after all of the bases are surrounded so they can do whatever
-        DESTROYINGANCHOR,
+        SURROUNDINGBASE, //pretty sure this will be after all of the bases are surrounded so they can do whatever
+        DELETINGBASE,
         DEFENDINGBASE, //all hands on deck!
         REPORTINGBASE,
         CHASINGENEMY
@@ -119,8 +118,8 @@ public class Launcher {
                 //find enemy bases, we'll surround them
                 //whatever is first, anchor or base
                 //if anchor, we destroy
-                if(lib.getEnemyBase() != Lib.noLoc && rc.getRoundNum() > 50 && !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase())){ //todo, shit dont work
-                    System.out.println("from lib.getenemybase() " + !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase()) + " " + lib.getEnemyBase() + " " + Arrays.toString(enemyBaseAlreadyThere));
+                if(lib.getEnemyBase() != Lib.noLoc && rc.getRoundNum() > 50 && !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase())){
+                   // System.out.println("from lib.getenemybase() " + !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase()) + " " + lib.getEnemyBase() + " " + Arrays.toString(enemyBaseAlreadyThere));
                     enemyHQ = lib.getEnemyBase();
                     targetLoc = enemyHQ;
                     job = Jobs.SURROUNDINGBASE;
@@ -186,6 +185,29 @@ public class Launcher {
           // System.out.println("9: " + Clock.getBytecodeNum());
             if(targetLoc != Lib.noLoc){
 
+                if(rc.canSenseLocation(targetLoc)){
+                    RobotInfo robotInfo = rc.senseRobotAtLocation(targetLoc);
+                    if(robotInfo == null){
+                        enemyBaseAlreadyThere[enemyBaseI] = targetLoc;
+                        enemyBaseI++;
+                        targetLoc = Lib.noLoc;
+                        dirGoing = enemyHQ.directionTo(rc.getLocation());
+                        job = Jobs.FINDINGENEMIES;
+                        if(rc.getRoundNum() < 200){
+                            job = Jobs.DELETINGBASE;
+                            targetLoc = myHQ;
+                        }
+                    }
+                    else if(robotInfo.getType() != RobotType.HEADQUARTERS){
+                        enemyBaseAlreadyThere[enemyBaseI] = targetLoc;
+                        enemyBaseI++;
+                        targetLoc = Lib.noLoc;
+                        dirGoing = enemyHQ.directionTo(rc.getLocation());
+                        job = Jobs.FINDINGENEMIES;
+                    }
+                }
+
+
                 for(RobotInfo robot : lib.getRobots()){
                     if(rc.getTeam() != robot.getTeam()){
                         if(robot.getType() == RobotType.HEADQUARTERS){
@@ -240,13 +262,23 @@ public class Launcher {
                 targetLoc = enemyHQ;
                 job = Jobs.SURROUNDINGBASE;
             }
-            if(rc.getLocation().distanceSquaredTo(myHQ) < 9){
+            if(rc.getLocation().distanceSquaredTo(myHQ) < 25){
                 lib.clearEnemyHQ(lib.getEnemyBase());
                 lib.writeEnemyHQ(enemyHQ);
                 job = Jobs.SURROUNDINGBASE;
                 targetLoc = enemyHQ;
             }
         }
+
+        if(job == Jobs.DELETINGBASE){
+            if(rc.getLocation().distanceSquaredTo(myHQ) < 25){
+                lib.clearEnemyHQ(targetLoc);
+                job = Jobs.FINDINGENEMIES;
+                targetLoc = Lib.noLoc;
+                dirGoing = myHQ.directionTo(rc.getLocation());
+            }
+        }
+
        //System.out.println("11: " + Clock.getBytecodeNum());
 
        //System.out.println("12: " + Clock.getBytecodeNum());
@@ -274,17 +306,18 @@ public class Launcher {
 
 
     void statusReport(){
-        rc.setIndicatorString(Arrays.toString(enemyBaseAlreadyThere));
+
         rc.setIndicatorString("t: " + targetLoc +
                "\nj: " + job +
                "\nd: " + dirGoing +
               "\nmyhq: " + myHQ +
                "\n");
+        rc.setIndicatorString(Arrays.toString(enemyBaseAlreadyThere));
     }
 
     void attack() throws GameActionException {
 
-        if(job == Jobs.CHASINGENEMY) {  //todo, still not attacking the lowest health enemy, all of the first 3 launchers should be attacking 1 enemy at once
+        if(job == Jobs.CHASINGENEMY) {
             if (rc.canSenseRobot(enemyID)){
                 RobotInfo enemy = rc.senseRobot(enemyID);
                 if(rc.canAttack(enemy.getLocation())){
@@ -331,8 +364,8 @@ public class Launcher {
             if(enemyHQ.equals(Lib.noLoc)){
                 enemyHQ = targetLoc;
             }
-            if(!lib.contains(enemyBaseAlreadyThere, targetLoc)){ //todo, shit dont work
-                System.out.println("added " + targetLoc + " " + Arrays.toString(enemyBaseAlreadyThere));
+            if(!lib.contains(enemyBaseAlreadyThere, targetLoc)){
+               // System.out.println("added " + targetLoc + " " + Arrays.toString(enemyBaseAlreadyThere));
                 enemyBaseAlreadyThere[enemyBaseI] = targetLoc;
                 enemyBaseI++;
             }

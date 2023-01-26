@@ -89,6 +89,7 @@ public class Headquarters {
                         lib.setMana(w.getMapLocation());
                         if (numCarriers < 4) { //make these corners based on where the base is, where the first corner is nearest to the center
                             if (spawn(RobotType.CARRIER, rc.getLocation().directionTo(w.getMapLocation()))) {
+                                System.out.println("spawn based on near mana");
                                 numCarriers++;
                             }
                         }
@@ -97,6 +98,7 @@ public class Headquarters {
                         lib.setAda(w.getMapLocation());
                         if (numCarriers >= 4) { //make these corners based on where the base is, where the first corner is nearest to the center
                             if (spawn(RobotType.CARRIER, rc.getLocation().directionTo(w.getMapLocation()))) {
+                                System.out.println("spawn based on near ada");
                                 numCarriers++;
                             }
                         }
@@ -108,8 +110,8 @@ public class Headquarters {
 
         }
 
-        if(rc.getRoundNum() == 300){
-            //rc.resign();
+        if(rc.getRoundNum() == 50){
+              //  rc.resign();
         }
 
         if(roundsWithoutAnchor < 200 && rc.getNumAnchors(Anchor.STANDARD) < 1 || rc.getNumAnchors(Anchor.STANDARD) == 1 || rc.getRoundNum() < 500) {
@@ -152,10 +154,13 @@ public class Headquarters {
         if(rc.getRoundNum() % carrierModifier == 0){
             if(numCarriers < 6 && rc.getRoundNum() < 50){ //make these corners based on where the base is, where the first corner is nearest to the center
                 if(spawn(RobotType.CARRIER, Lib.directions[(numCarriers*2+1) % 8])){ //skip the corner closest to the hq
+                    System.out.println("spawn based on first 6 in dir: " + Lib.directions[(numCarriers*2+1) % 8]);
                     numCarriers++;
                 }
             }
-            spawn(RobotType.CARRIER,rc.getRoundNum() >= 50 ? rc.getRoundNum() % 8 : 0);
+            else if(spawn(RobotType.CARRIER,rc.getRoundNum() >= 50 ? rc.getRoundNum() % 8 : 0)){
+                System.out.println("spawn in each dir after round 50");
+            }
         }
         else {
             if(rc.getRoundNum() < 35) {

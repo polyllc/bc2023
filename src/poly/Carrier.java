@@ -15,6 +15,7 @@ public class Carrier {
     boolean stopMoving = false;
     ResourceType primaryResource;
     int turnsLookingForResource; //after like 80 rounds, just go to the one that you see
+    int numFills = 0;
 
     MapLocation islandLoc = Lib.noLoc;
     int islandIndex;
@@ -22,7 +23,8 @@ public class Carrier {
     enum Jobs {
         GETTINGSRESOURCES,
         SCOUTINGENEMIES,
-        PLACINGARCHON
+        PLACINGARCHON,
+        REPORTINGMANATOBASE
     }
     public Carrier(RobotController robot){
         rc = robot;
@@ -31,10 +33,6 @@ public class Carrier {
         int lastRound = startedRound--;
         lib = new Lib(rc);
         job = Jobs.GETTINGSRESOURCES;
-        if(rc.getRoundNum() < 20){
-            primaryResource = ResourceType.MANA;
-            turnsLookingForResource = 61;
-        }
         if(rc.getRoundNum() > 1){
             if(rc.getRoundNum() % 2 == 0){
                 primaryResource = ResourceType.ADAMANTIUM;
@@ -45,6 +43,10 @@ public class Carrier {
         }
         else {
             turnsLookingForResource = 81;
+        }
+        if(rc.getRoundNum() < 20){
+            primaryResource = ResourceType.MANA;
+            turnsLookingForResource = 0;
         }
     }
 
@@ -71,6 +73,15 @@ public class Carrier {
 
         //todo, bro fucking fix the discovery pathfinding, for both launcher and carrier
 
+        if(job == Jobs.REPORTINGMANATOBASE){
+            targetLoc = myHQ;
+            if(rc.canWriteSharedArray(0,0)){
+                lib.setMana(mainResource);
+                targetLoc = mainResource;
+                job = Jobs.GETTINGSRESOURCES;
+            }
+        }
+
 
         if(job == Jobs.GETTINGSRESOURCES){
             turnsLookingForResource++;
@@ -84,14 +95,13 @@ public class Carrier {
                     }
                 }
 
-                if(turnsLookingForResource > 30){
+                if(turnsLookingForResource > 1){
                     if(primaryResource != null) {
                         if (primaryResource.equals(ResourceType.MANA)) {
                             if (!lib.getMana().equals(new MapLocation(0, 0))) {
                                 targetLoc = lib.getMana();
                                 mainResource = lib.getMana();
                                 dirGoing = Direction.CENTER;
-                                primaryResource = null;
                             }
                         }
                         else if (primaryResource.equals(ResourceType.ADAMANTIUM)) {
@@ -99,7 +109,6 @@ public class Carrier {
                                 targetLoc = lib.getAda();
                                 mainResource = lib.getAda();
                                 dirGoing = Direction.CENTER;
-                                primaryResource = null;
                             }
                         }
                     }
@@ -108,6 +117,15 @@ public class Carrier {
                 for(WellInfo loc : rc.senseNearbyWells()){
                      if(mainResource == null){
                          if(turnsLookingForResource > 50 || loc.getResourceType().equals(primaryResource)) {
+
+                             if(loc.getResourceType() == ResourceType.MANA){
+                                 if(rc.getRoundNum() < 20){
+                                     if(lib.getMana() == Lib.noLoc){
+                                         job = Jobs.REPORTINGMANATOBASE;
+                                     }
+                                 }
+                             }
+
                              mainResource = loc.getMapLocation();
                              targetLoc = loc.getMapLocation();
                              dirGoing = Direction.CENTER;
@@ -151,22 +169,32 @@ public class Carrier {
 
 
                 if(rc.canSenseLocation(targetLoc)){
+                    int nullify = 0;
                     if(rc.senseWell(targetLoc) == null){
                         RobotInfo info = rc.senseRobotAtLocation(targetLoc);
                         if(info == null){ //meaning most likely a bot or hq
-                            targetLoc = Lib.noLoc;
+                            nullify = 1;
                         }
                         else {
                             if(info.getTeam() != rc.getTeam()){
-                                targetLoc = Lib.noLoc;
+                                nullify = 1;
                             }
                             else if(info.getType() != RobotType.HEADQUARTERS){
-                                targetLoc = Lib.noLoc;
+                                nullify = 1;
                             }
                             else if(!rc.sensePassability(targetLoc)){ //if it's not a bot, then its a wall
-                                targetLoc = Lib.noLoc;
+                                nullify = 1;
                             }
                         }
+                    }
+                    if(nullify == 1){
+                        if(lib.getAda(0).equals(targetLoc) || lib.getAda(1).equals(targetLoc)){ //i know this will only work when near an hq or island but maybe down the line, it'll just be a variable so when it goes back to hq it'll clear
+                            lib.clearAda(targetLoc);
+                        }
+                        if(lib.getMana(0).equals(targetLoc) || lib.getMana(1).equals(targetLoc)){
+                            lib.clearMana(targetLoc);
+                        }
+                        targetLoc = Lib.noLoc;
                     }
                 }
 
@@ -174,7 +202,7 @@ public class Carrier {
                     targetLoc = Lib.noLoc;
                     dirGoing = rc.getLocation().directionTo(rc.getLocation());
                 }
-                if(lib.isFullResources() || rc.getRoundNum() < 100 && lib.getWeight() >= 20){
+                if(lib.isFullResources() || (rc.getRoundNum() < 100 && lib.getWeight() >= 20) ){
                     stopMoving = false;
                     targetLoc = lib.getNearestHQ();
                     //System.out.println("nearest hq: " + );
@@ -304,7 +332,7 @@ public class Carrier {
         rc.setIndicatorString("t: " + targetLoc +
                             "\ni: " + stopMoving +
                             "\nd: " + dirGoing +
-                            "\nj: " + job +
+                            "\nj: " + mainResource +
                             "\np: " + primaryResource);
     }
 
@@ -329,7 +357,7 @@ public class Carrier {
         }
     }
 
-    boolean senseSurrounded(MapLocation loc) throws GameActionException { //todo, implement
+    boolean senseSurrounded(MapLocation loc) throws GameActionException {
         if(!loc.equals(Lib.noLoc)){
             int i = 0;
             for(Direction dir : Lib.directions){
