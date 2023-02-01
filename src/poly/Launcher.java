@@ -71,7 +71,6 @@ public class Launcher {
 
     //todo, defend base more
     //todo, group up all of the launchers and attack the other launchers, don't really care about attacking the base immediately (if attacking the base the first time failed)
-    //todo, once at an enemy base, don't stick around! find other enemies around the map
 
     public void takeTurn() throws GameActionException {
 
@@ -118,7 +117,7 @@ public class Launcher {
                 //find enemy bases, we'll surround them
                 //whatever is first, anchor or base
                 //if anchor, we destroy
-                if(lib.getEnemyBase() != Lib.noLoc && rc.getRoundNum() > 50 && !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase())){
+                if(lib.getEnemyBase() != Lib.noLoc && rc.getRoundNum() > 50 && !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase())){ //todo, not all launchers should go to the enemy base, progressively
                    // System.out.println("from lib.getenemybase() " + !lib.contains(enemyBaseAlreadyThere, lib.getEnemyBase()) + " " + lib.getEnemyBase() + " " + Arrays.toString(enemyBaseAlreadyThere));
                     enemyHQ = lib.getEnemyBase();
                     targetLoc = enemyHQ;
@@ -222,7 +221,7 @@ public class Launcher {
                     }
                 }
 
-                if(rc.canSenseLocation(targetLoc)){ //todo, sometimes this shit dont work (ex pit polyv5 vs poly)
+                if(rc.canSenseLocation(targetLoc)){
                     if(rc.canSenseRobotAtLocation(targetLoc)){
                         if(rc.senseRobotAtLocation(targetLoc) == null){
                             lib.clearEnemyHQ(targetLoc);
@@ -360,7 +359,7 @@ public class Launcher {
     }
 
     void surroundEnemyBase() throws GameActionException {
-        if(rc.getLocation().distanceSquaredTo(targetLoc) < 6){
+        if(rc.getLocation().distanceSquaredTo(targetLoc) < 10){
             if(enemyHQ.equals(Lib.noLoc)){
                 enemyHQ = targetLoc;
             }

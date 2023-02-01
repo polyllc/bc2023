@@ -196,7 +196,7 @@ public class Headquarters {
                     }
                 }
             }
-            else if(spawn(RobotType.LAUNCHER,rc.getRoundNum() % 8)){
+            else if(spawn(RobotType.LAUNCHER,rc.getRoundNum() % 8)){ //todo, maybe make this relevant on what corner the hq is in?
             }
         }
     }

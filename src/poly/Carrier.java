@@ -73,6 +73,9 @@ public class Carrier {
 
         //todo, bro fucking fix the discovery pathfinding, for both launcher and carrier
 
+
+        //todo, carriers are committing suicide because they are not going to a resource location even though it is empty
+
         if(job == Jobs.REPORTINGMANATOBASE){
             targetLoc = myHQ;
             if(rc.canWriteSharedArray(0,0)){
@@ -202,13 +205,13 @@ public class Carrier {
                     targetLoc = Lib.noLoc;
                     dirGoing = rc.getLocation().directionTo(rc.getLocation());
                 }
-                if(lib.isFullResources() || (rc.getRoundNum() < 100 && lib.getWeight() >= 20) ){
+                if(lib.isFullResources()){
                     stopMoving = false;
                     targetLoc = lib.getNearestHQ();
                     //System.out.println("nearest hq: " + );
                     //targetLoc = myHQ;
                     for(Direction dir : Lib.directions){
-                        if(rc.getLocation().add(dir).equals(targetLoc)){
+                        if(rc.getLocation().add(dir).equals(targetLoc) || rc.getLocation().add(dir).equals(myHQ) || rc.getLocation().add(dir).equals(lib.getNearestHQ())){
                             if(primaryResource != null) {
                                 if (primaryResource.equals(ResourceType.MANA)) {
                                     if (lib.getMana().equals(new MapLocation(0, 0))) {
@@ -227,7 +230,7 @@ public class Carrier {
                         }
                     }
                 }
-                for(Direction dir : Lib.directions){
+                for(Direction dir : Lib.directionsCenter){
                     if(rc.getLocation().add(dir).equals(targetLoc)){
                         stopMoving = true;
                         if(rc.canCollectResource(rc.getLocation().add(dir),-1)){

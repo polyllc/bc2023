@@ -35,6 +35,18 @@ public class Lib {
             Direction.NORTHWEST,
     };
 
+    static final Direction[] directionsCenter = {
+            Direction.CENTER,
+            Direction.NORTH,
+            Direction.NORTHEAST,
+            Direction.EAST,
+            Direction.SOUTHEAST,
+            Direction.SOUTH,
+            Direction.SOUTHWEST,
+            Direction.WEST,
+            Direction.NORTHWEST,
+    };
+
     public int getQuadrant(){
         int width = rc.getMapWidth();
         int height = rc.getMapHeight();

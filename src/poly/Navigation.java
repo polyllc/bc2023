@@ -43,6 +43,7 @@ public class Navigation {
         else {
             Direction[] temp = {dir, dir.rotateRight(), dir.rotateLeft(), dir.rotateRight().rotateRight(),dir.rotateLeft().rotateLeft()};
             toTry = temp;
+            toTry = temp;
         }
         for (Direction d : toTry){
             if(tryMove(d))
@@ -200,11 +201,17 @@ public class Navigation {
                 else if(rc.isLocationOccupied(loc)){
 
                 }
-                else if(rc.senseMapInfo(loc).getCurrentDirection() != Direction.CENTER){
-
-                }
                 else {
-                    valid = true;
+                    MapInfo mapInfo = rc.senseMapInfo(loc);
+                    if(mapInfo.getCurrentDirection() != Direction.CENTER){
+
+                    }
+                    else if(!mapInfo.isPassable()){
+
+                    }
+                    else {
+                        valid = true;
+                    }
                 }
                // boolean valid = rc.canSenseLocation(loc) && !rc.isLocationOccupied(loc) && rc.senseMapInfo(loc).getCurrentDirection() == Direction.CENTER;
                 validLocs[x][y] = valid;
